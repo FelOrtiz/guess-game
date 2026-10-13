@@ -32,6 +32,10 @@ El sitio se publica en https://felortiz.github.io/guess-game/ mediante el workfl
 
 Para revisar la compilación de Pages en tu equipo, ejecuta `npm run build:pages`. El resultado queda en `dist/pages/browser`; `npm run build` sigue generando la versión para Capacitor en `www/browser`.
 
+### Añadir al inicio en iPhone
+
+Abre `https://felortiz.github.io/guess-game/` directamente en **Safari**. Toca el menú de página y luego **Compartir → Añadir a pantalla de inicio**. Activa **Abrir como app** y toca **Añadir**. Si no aparece la acción, baja al final de la lista, toca **Editar acciones** y agrega **Añadir a pantalla de inicio**. [Instrucciones de Apple](https://support.apple.com/guide/iphone/turn-a-website-into-an-app-iphea86e5236/ios).
+
 Al probar desde Safari en iPhone mediante un túnel, los pitidos deben sonar al tocar «Iniciar» y durante el turno. Safari no ofrece `navigator.vibrate`, por lo que la vibración solo se puede probar con la app iOS instalada desde Xcode mediante Capacitor.
 
 ## Compilar para Android

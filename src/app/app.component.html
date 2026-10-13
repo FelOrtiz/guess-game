@@ -3,7 +3,8 @@
   <ng-container *ngIf="loading"><div class="loading"><ion-spinner name="crescent"></ion-spinner><p>Cargando personajes...</p></div></ng-container>
   <ng-container *ngIf="!loading">
    <header class="topbar">
-    <button class="icon-button back" *ngIf="view !== 'home' && view !== 'scoring'" (click)="goHome()" aria-label="Volver al inicio"><ion-icon name="arrow-back"></ion-icon></button>
+    <button class="icon-button back" *ngIf="view !== 'home' && view !== 'scoring' && view !== 'finished'" (click)="requestHome()" aria-label="Volver al inicio"><ion-icon name="arrow-back"></ion-icon></button>
+    <div class="top-placeholder" *ngIf="view === 'home' || view === 'finished'"></div>
     <div class="top-placeholder" *ngIf="view === 'scoring'"></div>
     <div class="brand"><span class="brand-icon">✦</span> ADIVINA<span class="brand-light">QUIÉN</span></div>
     <button class="icon-button" *ngIf="view === 'game'" (click)="reroll()" aria-label="Cambiar personaje y reiniciar turno"><ion-icon name="refresh"></ion-icon></button>
@@ -30,7 +31,7 @@
    <main *ngIf="view==='game' && current" class="game fade">
     <div class="game-meta"><span>RONDA {{roundNumber}} DE {{roundCount}}</span><strong class="game-player">{{activePlayer?.name}}</strong><span>TURNO {{playerIndex+1}} DE {{players.length}}</span></div>
     <div class="progress"><span [style.width.%]="progress"></span></div>
-    <section class="character-card" [class.has-photo]="current.category==='Actores de Hollywood'" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [class.flipped]="cardFlipped" [style.--accent]="category?.color" [style.--accent-muted]="category?.light" role="button" tabindex="0" [attr.aria-label]="cardFlipped ? 'Mostrar personaje y pausar tiempo' : (hasTurnStarted ? 'Ocultar personaje y reanudar tiempo' : 'Ocultar personaje e iniciar tiempo')" [attr.aria-pressed]="cardFlipped" (click)="flipCard()" (keydown.enter)="flipCard()" (keydown.space)="$event.preventDefault();flipCard()">
+    <section class="character-card" [class.has-photo]="current.category==='Actores de Hollywood'" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [class.flipped]="cardFlipped" [class.time-low]="cardFlipped && turnTimerRunning && timeLeft<=10" [style.--accent]="category?.color" [style.--accent-muted]="category?.light" [style.--time-progress]="(timeLeft / turnDuration * 100) + '%'" role="button" tabindex="0" [attr.aria-label]="cardFlipped ? 'Mostrar personaje y pausar tiempo' : (hasTurnStarted ? 'Ocultar personaje y reanudar tiempo' : 'Ocultar personaje e iniciar tiempo')" [attr.aria-pressed]="cardFlipped" (click)="flipCard()" (keydown.enter)="flipCard()" (keydown.space)="$event.preventDefault();flipCard()">
      <div class="card-rotator">
       <div class="card-face card-front" [attr.aria-hidden]="cardFlipped">
        <img *ngIf="current.category==='Actores de Hollywood'" class="character-photo" [src]="'assets/photos/'+current.id+'.jpg'" [alt]="'Retrato de '+current.name" decoding="async" />
@@ -41,7 +42,24 @@
       <div class="card-face card-back" [attr.aria-hidden]="!cardFlipped"><span class="card-timer card-panel card-back-timer" [class.time-low]="timeLeft<=10" [attr.aria-label]="'Tiempo restante: '+formattedTime">{{formattedTime}}</span></div>
      </div>
     </section>
-    <button class="primary-button score-button" (click)="openScoring()">PUNTUAR</button>
+    <div *ngIf="cardFlipped" class="game-actions">
+     <button class="primary-button score-button" (click)="openScoring()">PUNTUAR</button>
+     <button type="button" class="pause-button" (click)="toggleTurnTimer()" [attr.aria-label]="turnTimerRunning ? 'Pausar tiempo' : 'Continuar tiempo'"><ion-icon [name]="turnTimerRunning ? 'pause' : 'play'" aria-hidden="true"></ion-icon></button>
+    </div>
+   </main>
+   <main *ngIf="view==='timeout' && current" class="timeout-screen fade">
+    <div class="section-kicker">TIEMPO AGOTADO</div>
+    <h1>¡Qué <em>lástima!</em></h1>
+    <p>No lograste adivinar el personaje.</p>
+    <section class="character-card timeout-character-card" [class.has-photo]="current.category==='Actores de Hollywood'" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [style.--accent]="category?.color" [style.--accent-muted]="category?.light" [attr.aria-label]="'El personaje era '+current.name">
+     <div class="card-face card-front">
+      <img *ngIf="current.category==='Actores de Hollywood'" class="character-photo" [src]="'assets/photos/'+current.id+'.jpg'" [alt]="'Retrato de '+current.name" decoding="async" />
+      <div class="card-top"><div class="flag-pill card-panel"><span class="flag">{{flag}}</span><span class="country">{{countryLabel}}</span></div></div>
+      <div class="card-center"><h2>{{current.name}}</h2></div>
+      <div class="card-bottom"><span class="category-pill card-panel">{{category?.icon}} {{current.category}}</span></div>
+     </div>
+    </section>
+    <button class="primary-button timeout-continue" (click)="continueAfterTimeout()">CONTINUAR</button>
    </main>
    <main *ngIf="view==='scoring'" class="scoring fade">
     <div class="between-symbol" aria-hidden="true">★</div>
@@ -49,9 +67,9 @@
     <h1>{{correctingExpiredTurn ? '¿CÓMO FUE' : 'PUNTUAR'}}<br/><em>{{correctingExpiredTurn ? 'EL ACIERTO?' : 'EL TURNO'}}</em></h1>
     <p>{{correctingExpiredTurn ? 'Elige una opción para sumar los puntos de este turno.' : 'Elige los puntos del acierto o marca la respuesta incorrecta.'}}</p>
     <div class="score-options">
-     <button (click)="scoreCorrect(3)">ANTES DE 3 PREGUNTAS <strong>+3 puntos</strong></button>
-     <button (click)="scoreCorrect(2)">DENTRO DEL TIEMPO <strong>+2 puntos</strong></button>
-     <button (click)="scoreCorrect(1)">CON PISTA <strong>+1 punto</strong></button>
+     <button (click)="scoreCorrect(baseScore+bonusScore)">ANTES DE {{bonusQuestions}} PREGUNTAS <strong>+{{baseScore+bonusScore}} puntos</strong></button>
+     <button (click)="scoreCorrect(baseScore)">PUNTAJE BASE <strong>+{{baseScore}} puntos</strong></button>
+     <button (click)="scoreCorrect(baseScore+cluePenalty)">CON PISTA <strong>{{signedScore(baseScore+cluePenalty)}} puntos</strong></button>
     </div>
     <button class="score-incorrect" *ngIf="!correctingExpiredTurn" (click)="scoreIncorrect()"><ion-icon name="close-circle" aria-hidden="true"></ion-icon> MARCAR COMO INCORRECTO</button>
    </main>
@@ -64,6 +82,7 @@
      <div><ion-icon name="close-circle" aria-hidden="true"></ion-icon><strong>{{activePlayer?.errors}}</strong><small>INCORRECTAS</small></div>
      <div><ion-icon name="trophy-outline" aria-hidden="true"></ion-icon><strong>{{activePlayer?.score}}</strong><small>PUNTOS</small></div>
     </div>
+    <div *ngIf="roundNumber>1 && activePlayer" class="current-standing" aria-live="polite"><span>PUESTO HASTA AHORA</span><strong>{{activePlayerRank}}° lugar <small>de {{players.length}}</small></strong></div>
     <p>El personaje está oculto. Pasa el dispositivo a {{activePlayer?.name}} y presiona Iniciar cuando esté listo.</p>
     <button class="primary-button" (click)="beginReveal()" [disabled]="countdown > 0">
      <ion-icon name="play" *ngIf="countdown === 0" aria-hidden="true"></ion-icon>
@@ -84,12 +103,24 @@
      <button type="button" (click)="settingsTab='general'" [class.active]="settingsTab==='general'" [attr.aria-pressed]="settingsTab==='general'">GENERAL</button>
      <button type="button" (click)="settingsTab='players'" [class.active]="settingsTab==='players'" [attr.aria-pressed]="settingsTab==='players'">JUGADORES</button>
      <button type="button" (click)="settingsTab='categories'" [class.active]="settingsTab==='categories'" [attr.aria-pressed]="settingsTab==='categories'">CATEGORÍAS</button>
+     <button type="button" (click)="settingsTab='visual'" [class.active]="settingsTab==='visual'" [attr.aria-pressed]="settingsTab==='visual'">VISUAL</button>
     </nav>
     <div class="settings-tab-panel" [hidden]="settingsTab!=='general'">
      <section class="settings-section"><h2>Rondas</h2><p>Cada jugador participa una vez por ronda.</p><div class="option-grid"><button *ngFor="let option of roundOptions" (click)="setRounds(option)" [class.selected]="roundCount===option">{{option}}</button></div></section>
      <section class="settings-section"><h2>Espera antes de revelar</h2><p>Cuenta regresiva antes de mostrar el personaje de cada turno.</p><div class="option-grid"><button *ngFor="let option of revealDelayOptions" (click)="setRevealDelay(option)" [class.selected]="revealDelay===option">{{option}} seg</button></div></section>
-     <section class="settings-section"><h2>Tiempo para adivinar</h2><div class="option-grid"><button *ngFor="let option of timeOptions" (click)="setDuration(option)" [class.selected]="turnDuration===option">{{timeLabel(option)}}</button></div><p class="capability-note" *ngIf="vibrationUnavailable">Este navegador no permite vibrar. Los avisos sonarán; para vibración en iPhone, abre la app instalada.</p></section>
-     <section class="settings-section"><h2>Tamaño del nombre</h2><p>Solo cambia el nombre en la carta de personaje.</p><div class="option-grid name-size-options" role="group" aria-label="Tamaño del nombre del personaje"><button type="button" *ngFor="let option of characterNameSizeOptions" (click)="setCharacterNameSize(option.id)" [class.selected]="characterNameSize===option.id" [attr.aria-pressed]="characterNameSize===option.id"><span>{{option.label}}</span><small>{{option.size}} px</small></button></div><p class="name-size-preview-label">Vista previa</p><div class="character-card name-size-preview" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" aria-hidden="true"><div class="card-center"><h2>Tu personaje</h2></div></div></section>
+     <section class="settings-section"><h2>Tiempo para adivinar</h2><div class="option-grid"><button *ngFor="let option of timeOptions" (click)="setDuration(option)" [class.selected]="turnDuration===option">{{timeLabel(option)}}</button></div></section>
+     <section class="settings-section score-settings"><h2>Puntajes</h2><p>Configura los puntos y revisa cómo se aplican al puntuar.</p>
+      <div class="score-setting"><h3>Puntaje base</h3><p>Puntos por adivinar dentro del tiempo.</p><div class="option-grid score-setting-options" role="group" aria-label="Puntaje base"><button type="button" *ngFor="let option of baseScoreOptions" (click)="setBaseScore(option)" [class.selected]="baseScore===option" [attr.aria-pressed]="baseScore===option">{{option}}</button></div></div>
+      <div class="score-setting"><h3>Bonificación preguntas</h3><p>Preguntas máximas para obtener la bonificación.</p><div class="option-grid score-setting-options" role="group" aria-label="Bonificación preguntas"><button type="button" *ngFor="let option of bonusQuestionOptions" (click)="setBonusQuestions(option)" [class.selected]="bonusQuestions===option" [attr.aria-pressed]="bonusQuestions===option">{{option}}</button></div></div>
+      <div class="score-setting"><h3>Puntaje bonificación</h3><p>Puntos extra por adivinar dentro del límite de preguntas.</p><div class="option-grid score-setting-options" role="group" aria-label="Puntaje bonificación"><button type="button" *ngFor="let option of bonusScoreOptions" (click)="setBonusScore(option)" [class.selected]="bonusScore===option" [attr.aria-pressed]="bonusScore===option">+{{option}}</button></div></div>
+      <div class="score-setting"><h3>Puntaje al dar pista</h3><p>Ajuste aplicado al puntaje base cuando se usa una pista.</p><div class="option-grid score-setting-options" role="group" aria-label="Puntaje al dar pista"><button type="button" *ngFor="let option of cluePenaltyOptions" (click)="setCluePenalty(option)" [class.selected]="cluePenalty===option" [attr.aria-pressed]="cluePenalty===option">{{option===0 ? '-0' : option}}</button></div></div>
+      <div class="score-preview" aria-live="polite" aria-label="Vista previa de puntajes"><strong>Vista previa</strong><div><span>Puntaje base</span><b>+{{baseScore}} puntos</b></div><div><span>Bonificación</span><b>+{{baseScore+bonusScore}} puntos</b></div><div><span>Con pista</span><b>{{signedScore(baseScore+cluePenalty)}} puntos</b></div></div>
+     </section>
+    </div>
+    <div class="settings-tab-panel" [hidden]="settingsTab!=='visual'">
+     <section class="settings-section"><h2>Sonido</h2><p>Activa o silencia los efectos de audio del juego.</p><div class="category-row"><div class="category-copy"><strong>{{soundEnabled ? 'Sonido activado' : 'Sonido desactivado'}}</strong><small>Alertas y efectos del juego</small></div><ion-toggle [checked]="soundEnabled" (ionChange)="setSoundEnabled($event.detail.checked)" aria-label="Activar sonido"></ion-toggle></div></section>
+     <section class="settings-section"><h2>Vibración</h2><p>Activa o desactiva los avisos hápticos del temporizador.</p><div class="category-row"><div class="category-copy"><strong>{{vibrationEnabled ? 'Vibración activada' : 'Vibración desactivada'}}</strong><small>Avisos al llegar a la mitad y a 15 segundos</small></div><ion-toggle [checked]="vibrationEnabled" [disabled]="vibrationUnavailable" (ionChange)="setVibrationEnabled($event.detail.checked)" aria-label="Activar vibración"></ion-toggle></div><p class="capability-note" *ngIf="vibrationUnavailable">Este dispositivo no permite vibrar. Para vibración en iPhone, abre la app instalada.</p></section>
+     <section class="settings-section"><h2>Tamaño del nombre</h2><p>Solo cambia el nombre en la carta de personaje.</p><div class="option-grid name-size-options" role="group" aria-label="Tamaño del nombre del personaje"><button type="button" *ngFor="let option of characterNameSizeOptions" (click)="setCharacterNameSize(option.id)" [class.selected]="characterNameSize===option.id" [attr.aria-pressed]="characterNameSize===option.id"><span>{{option.label}}</span><small>{{option.size}} px</small></button></div><div class="score-preview name-size-preview" aria-live="polite" aria-label="Vista previa del tamaño del nombre"><strong>Vista previa · {{characterNameSize==='normal' ? 36 : characterNameSize==='large' ? 52 : 68}} px</strong><div class="name-size-preview-row"><span [style.font-size.px]="characterNameSize==='normal' ? 36 : characterNameSize==='large' ? 52 : 68">Tu personaje</span></div></div></section>
      <section class="settings-section"><h2>Color de acento</h2><p>Elige el color principal de la aplicación.</p><div class="accent-options" role="group" aria-label="Color de acento"><button type="button" *ngFor="let option of accentOptions" class="accent-choice" [class.selected]="accentId===option.id" [style.--choice-color]="option.color" [attr.aria-pressed]="accentId===option.id" (click)="setAccent(option.id)"><span class="accent-swatch" aria-hidden="true"></span><span>{{option.label}}</span></button></div></section>
     </div>
     <div class="settings-tab-panel" [hidden]="settingsTab!=='players'">
@@ -104,9 +135,24 @@
       <div class="category-list"><div class="category-row" *ngFor="let cat of categories"><span class="category-emoji" [style.background]="cat.light">{{cat.icon}}</span><div class="category-copy"><strong>{{cat.name}}</strong><small>50 personajes</small></div><ion-toggle [checked]="isEnabled(cat.name)" (ionChange)="toggle(cat.name,$event.detail.checked)" [attr.aria-label]="cat.name"></ion-toggle></div></div>
      </section>
     </div>
-    <p class="settings-foot">{{availableCount}} personajes disponibles</p><button class="primary-button" (click)="goHome()"><span>GUARDAR Y VOLVER</span><span class="button-arrow" aria-hidden="true">↗</span></button>
    </main>
-   <main *ngIf="view==='finished'" class="finished fade"><div class="finish-icon">🏆</div><div class="section-kicker">¡PARTIDA COMPLETADA!</div><h1>¡BIEN<br/><em>JUGADO!</em></h1><p>{{finalWinners.length===1 ? 'Ganador: ' : 'Empate: '}}{{finalWinnerNames}}</p><div class="leaderboard"><div *ngFor="let player of players"><strong>{{player.name}}</strong><span>{{player.score}} puntos · {{player.errors}} errores</span></div></div><button class="primary-button" (click)="start()" [disabled]="!canStart"><span>JUGAR DE NUEVO</span><span class="button-arrow" aria-hidden="true">↗</span></button><button class="secondary-button" (click)="goHome()">VOLVER AL INICIO</button></main>
+   <main *ngIf="view==='finished'" class="finished final-screen fade">
+    <div class="confetti" aria-hidden="true"><span *ngFor="let piece of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]"></span></div>
+    <div class="finish-icon" aria-hidden="true">🏆</div>
+    <div class="section-kicker">¡PARTIDA COMPLETADA!</div>
+    <div class="final-winner-label">{{finalWinners.length===1 ? 'GANADOR' : 'EMPATE'}}</div>
+    <h1 class="final-winner-name">{{finalWinnerNames}}</h1>
+    <p class="final-congrats">¡BIEN JUGADO!</p>
+    <button type="button" class="secondary-button ranking-toggle" (click)="showFinalRanking=!showFinalRanking" [attr.aria-expanded]="showFinalRanking"><span>{{showFinalRanking ? 'OCULTAR CLASIFICACIÓN' : 'VER CLASIFICACIÓN'}}</span><span aria-hidden="true">{{showFinalRanking ? '−' : '+'}}</span></button>
+    <div *ngIf="showFinalRanking" class="leaderboard final-leaderboard">
+     <div *ngFor="let player of rankedPlayers;let i=index" class="final-rank-row">
+      <strong><span class="rank-position">{{i+1}}.</span><span *ngIf="i<3" class="rank-medal" aria-hidden="true">{{i===0 ? '🥇' : i===1 ? '🥈' : '🥉'}}</span>{{player.name}}</strong>
+      <span>{{player.score}} puntos · {{player.errors}} errores</span>
+     </div>
+    </div>
+    <button class="primary-button" (click)="start()" [disabled]="!canStart"><span>JUGAR DE NUEVO</span><span class="button-arrow" aria-hidden="true">↗</span></button>
+    <button class="secondary-button" (click)="requestHome()">VOLVER AL INICIO</button>
+   </main>
   </ng-container>
  </div>
 </ion-content>
@@ -117,6 +163,15 @@
  <div class="reroll-dialog-actions">
   <button type="button" class="secondary-button" (click)="cancelReroll()">CANCELAR</button>
   <button type="button" class="primary-button" (click)="confirmReroll()">CAMBIAR PERSONAJE</button>
+ </div>
+</dialog>
+<dialog #homeDialog class="reroll-dialog" aria-labelledby="home-dialog-title" aria-describedby="home-dialog-description" (cancel)="$event.preventDefault();cancelHome()">
+ <div class="reroll-dialog-icon" aria-hidden="true"><ion-icon name="arrow-back"></ion-icon></div>
+ <h2 id="home-dialog-title">¿Volver al inicio?</h2>
+ <p id="home-dialog-description">Si sales ahora, perderás el progreso de la partida actual.</p>
+ <div class="reroll-dialog-actions">
+  <button type="button" class="secondary-button" (click)="cancelHome()">SEGUIR JUGANDO</button>
+  <button type="button" class="primary-button" (click)="confirmHome()">VOLVER AL INICIO</button>
  </div>
 </dialog>
 </ion-app>

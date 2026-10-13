@@ -6,13 +6,13 @@ import { Capacitor } from '@capacitor/core';
 import { Haptics } from '@capacitor/haptics';
 import { IonApp, IonContent, IonIcon, IonToggle, IonSpinner } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { arrowBack, checkmark, close, refresh, settingsOutline, play, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline } from 'ionicons/icons';
+import { arrowBack, checkmark, close, refresh, settingsOutline, play, pause, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline } from 'ionicons/icons';
 
-type View = 'home' | 'game' | 'scoring' | 'between' | 'roundResult' | 'settings' | 'finished';
-type SettingsTab = 'general' | 'players' | 'categories';
+type View = 'home' | 'game' | 'scoring' | 'between' | 'timeout' | 'roundResult' | 'settings' | 'finished';
+type SettingsTab = 'general' | 'visual' | 'players' | 'categories';
 type AccentId = 'green' | 'blue' | 'red' | 'yellow' | 'orange';
 type CharacterNameSize = 'normal' | 'large' | 'huge';
-type SoundKind = 'beep' | 'midpoint' | 'success' | 'error' | 'flip';
+type SoundKind = 'beep' | 'midpoint' | 'success' | 'error' | 'flip' | 'gear' | 'save' | 'timerToggle' | 'celebration' | 'newGame';
 interface Player {name:string;score:number;roundScore:number;correct:number;errors:number;}
 interface Character {id:number;name:string;category:string;franchise?:string;nationality:string;birthday:string|null;deathDate:string|null;gender:string;isAlive:boolean;}
 interface Category {name:string;color:string;light:string;icon:string;}
@@ -29,6 +29,7 @@ const CATEGORY_DATA:Category[] = [
 @Component({selector:'app-root',standalone:true,imports:[CommonModule,FormsModule,IonApp,IonContent,IonIcon,IonToggle,IonSpinner],templateUrl:'./app.component.html',styleUrls:['./app.component.scss']})
 export class AppComponent implements OnInit, OnDestroy {
  @ViewChild('rerollDialog',{static:true}) private rerollDialog!:ElementRef<HTMLDialogElement>;
+ @ViewChild('homeDialog',{static:true}) private homeDialog!:ElementRef<HTMLDialogElement>;
  private http=inject(HttpClient);
  private revealTimer:ReturnType<typeof setInterval>|null=null;
  private turnTimer:ReturnType<typeof setTimeout>|null=null;
@@ -37,6 +38,9 @@ export class AppComponent implements OnInit, OnDestroy {
  private halfTimeVibrated=false;
  private fifteenSecondsVibrated=false;
  private lastBeepSecond:number|null=null;
+ private soundContext:AudioContext|null=null;
+ private soundBuffers:Record<SoundKind,AudioBuffer>|null=null;
+ private soundSources=new Map<SoundKind,AudioBufferSourceNode>();
  private soundAudio:Record<SoundKind,HTMLAudioElement>|null=null;
  private soundUrls:Record<SoundKind,string>|null=null;
  private expiredPlayerIndex:number|null=null;
@@ -46,9 +50,13 @@ export class AppComponent implements OnInit, OnDestroy {
  private scoreReturnView:View='between';
  readonly categories=CATEGORY_DATA;
  readonly allCategoryNames=CATEGORY_DATA.map(c=>c.name);
- readonly roundOptions=[3,5,7,10];
+ readonly roundOptions=[1,2,3,5,7,8,10,15];
  readonly timeOptions=[30,60,90,120];
  readonly revealDelayOptions=[1,3,5,10];
+ readonly bonusScoreOptions=[1,2,3];
+ readonly bonusQuestionOptions=[1,3,5,8];
+ readonly baseScoreOptions=[1,2,3,5];
+ readonly cluePenaltyOptions=[0,-1,-2,-3];
  readonly characterNameSizeOptions=[{id:'normal',label:'Normal',size:36},{id:'large',label:'Grande',size:52},{id:'huge',label:'Gigante',size:68}] as const;
  readonly accentOptions=[
   {id:'green',label:'Verde',color:'#b4fa66',soft:'#72ce9b'},
@@ -65,13 +73,22 @@ export class AppComponent implements OnInit, OnDestroy {
  current:Character|null=null; cardFlipped=false; hasTurnStarted=false; remaining:number[]=[]; skipped=0;loading=true;error=''; countdown=0;
  playerNames:string[]=[];newPlayerName='';roundCount=3;turnDuration=60;revealDelay=5;
  players:Player[]=[];roundNumber=1;playerIndex=0;timeLeft=0;
- constructor(){addIcons({arrowBack,checkmark,close,refresh,settingsOutline,play,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline});}
+ bonusScore=1;bonusQuestions=3;baseScore=2;cluePenalty=-1;
+ soundEnabled=true;vibrationEnabled=true;
+ showFinalRanking=false;
+ constructor(){addIcons({arrowBack,checkmark,close,refresh,settingsOutline,play,pause,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline});}
  ngOnInit():void{
   try{const stored=JSON.parse(localStorage.getItem('adivina.categories')||'null');if(Array.isArray(stored)){this.enabled=this.allCategoryNames.filter(c=>stored.includes(c));}}catch{}
   try{const stored=JSON.parse(localStorage.getItem('adivina.players')||'[]');if(Array.isArray(stored))this.playerNames=stored.filter((name):name is string=>typeof name==='string'&&!!name.trim()).map(name=>name.trim());}catch{}
   const rounds=Number(localStorage.getItem('adivina.rounds'));if(this.roundOptions.includes(rounds))this.roundCount=rounds;
   const duration=Number(localStorage.getItem('adivina.duration'));if(this.timeOptions.includes(duration))this.turnDuration=duration;
   const revealDelay=Number(localStorage.getItem('adivina.revealDelay'));if(this.revealDelayOptions.includes(revealDelay))this.revealDelay=revealDelay;
+  const bonusScore=Number(localStorage.getItem('adivina.bonusScore'));if(this.bonusScoreOptions.includes(bonusScore))this.bonusScore=bonusScore;
+  const bonusQuestions=Number(localStorage.getItem('adivina.bonusQuestions'));if(this.bonusQuestionOptions.includes(bonusQuestions))this.bonusQuestions=bonusQuestions;
+  const baseScore=Number(localStorage.getItem('adivina.baseScore'));if(this.baseScoreOptions.includes(baseScore))this.baseScore=baseScore;
+  const cluePenalty=Number(localStorage.getItem('adivina.cluePenalty'));if(this.cluePenaltyOptions.includes(cluePenalty))this.cluePenalty=cluePenalty;
+  this.soundEnabled=localStorage.getItem('adivina.soundEnabled')!=='false';
+  this.vibrationEnabled=localStorage.getItem('adivina.vibrationEnabled')!=='false';
   const storedAccent=localStorage.getItem('adivina.accent');if(this.accentOptions.some(option=>option.id===storedAccent))this.accentId=storedAccent as AccentId;
   const storedNameSize=localStorage.getItem('adivina.characterNameSize');if(this.characterNameSizeOptions.some(option=>option.id===storedNameSize))this.characterNameSize=storedNameSize as CharacterNameSize;
   this.http.get<Character[]>('assets/character.json').subscribe({next:(people)=>{this.characters=people;this.loading=false;},error:()=>{this.loading=false;this.error='No se pudo cargar el listado de personajes.';}});
@@ -86,15 +103,22 @@ export class AppComponent implements OnInit, OnDestroy {
  get canStart():boolean{return this.playerNames.length>=2&&this.categoryCount>0&&this.availableCount>0;}
  get answered():number{return this.players.reduce((total,player)=>total+player.correct+player.errors,0);}
  get category():Category|undefined{return this.categories.find(c=>c.name===this.current?.category);}
+ get turnTimerRunning():boolean{return this.turnTimer!==null;}
  get progress():number{return this.players.length?Math.round(((this.roundNumber-1)*this.players.length+this.playerIndex)/(this.roundCount*this.players.length)*100):0;}
  get activePlayer():Player|undefined{return this.players[this.playerIndex];}
+ get activePlayerRank():number{
+  const player=this.activePlayer;
+  return player?1+this.players.filter(other=>other.score>player.score).length:0;
+ }
  get scoringPlayer():Player|undefined{return this.players[this.scoringPlayerIndex];}
  get expiredPlayer():Player|undefined{return this.expiredPlayerIndex===null?undefined:this.players[this.expiredPlayerIndex];}
  get roundWinners():Player[]{const highest=Math.max(...this.players.map(p=>p.roundScore));return this.players.filter(p=>p.roundScore===highest);}
  get finalWinners():Player[]{const highest=Math.max(...this.players.map(p=>p.score));return this.players.filter(p=>p.score===highest);}
+ get rankedPlayers():Player[]{return [...this.players].sort((a,b)=>b.score-a.score);}
  get roundWinnerNames():string{return this.roundWinners.map(p=>p.name).join(' y ');}
  get finalWinnerNames():string{return this.finalWinners.map(p=>p.name).join(' y ');}
  get formattedTime():string{return `${Math.floor(this.timeLeft/60)}:${String(this.timeLeft%60).padStart(2,'0')}`;}
+ signedScore(score:number):string{return score>0?`+${score}`:String(score);}
  get characterAge():number|null{
   const birthday=this.current?.birthday;
   if(!birthday)return null;
@@ -130,26 +154,64 @@ export class AppComponent implements OnInit, OnDestroy {
   [this.playerNames[index],this.playerNames[target]]=[this.playerNames[target],this.playerNames[index]];
   this.playerNames=[...this.playerNames];this.savePlayers();
  }
- private savePlayers():void{localStorage.setItem('adivina.players',JSON.stringify(this.playerNames));}
+ private savePlayers():void{
+  localStorage.setItem('adivina.players',JSON.stringify(this.playerNames));
+  this.prepareAudio();this.playSound('save');
+ }
  setRounds(value:number):void{if(this.roundOptions.includes(value)){this.roundCount=value;localStorage.setItem('adivina.rounds',String(value));}}
  setDuration(value:number):void{if(this.timeOptions.includes(value)){this.turnDuration=value;localStorage.setItem('adivina.duration',String(value));}}
  setRevealDelay(value:number):void{if(this.revealDelayOptions.includes(value)){this.revealDelay=value;localStorage.setItem('adivina.revealDelay',String(value));}}
+ setBonusScore(value:number):void{if(this.bonusScoreOptions.includes(value)){this.bonusScore=value;localStorage.setItem('adivina.bonusScore',String(value));}}
+ setBonusQuestions(value:number):void{if(this.bonusQuestionOptions.includes(value)){this.bonusQuestions=value;localStorage.setItem('adivina.bonusQuestions',String(value));}}
+ setBaseScore(value:number):void{if(this.baseScoreOptions.includes(value)){this.baseScore=value;localStorage.setItem('adivina.baseScore',String(value));}}
+ setCluePenalty(value:number):void{if(this.cluePenaltyOptions.includes(value)){this.cluePenalty=value;localStorage.setItem('adivina.cluePenalty',String(value));}}
+ setSoundEnabled(enabled:boolean):void{
+  this.soundEnabled=enabled;localStorage.setItem('adivina.soundEnabled',String(enabled));
+  if(enabled)this.prepareAudio();
+  else{
+   for(const kind of this.soundSources.keys())this.stopSoundSource(kind);
+   if(this.soundAudio)Object.values(this.soundAudio).forEach(audio=>audio.pause());
+  }
+ }
+ setVibrationEnabled(enabled:boolean):void{
+  this.vibrationEnabled=enabled;localStorage.setItem('adivina.vibrationEnabled',String(enabled));
+ }
  setAccent(id:AccentId):void{this.accentId=id;localStorage.setItem('adivina.accent',id);}
  setCharacterNameSize(size:CharacterNameSize):void{this.characterNameSize=size;localStorage.setItem('adivina.characterNameSize',size);}
  timeLabel(seconds:number):string{return seconds===30?'30 seg':seconds===60?'1 min':seconds===90?'1 min 30 seg':'2 min';}
+ requestHome():void{
+  if(this.homeDialog.nativeElement.open)return;
+  if(this.view==='settings'){this.goHome();return;}
+  if(this.view==='game'&&this.cardFlipped){
+   this.pauseTurnTimer();
+   if(this.pausedTurnRemainingMs===0){this.finishTurn(false,true);return;}
+  }
+  this.homeDialog.nativeElement.showModal();
+ }
+ cancelHome():void{
+  if(!this.homeDialog.nativeElement.open)return;
+  this.homeDialog.nativeElement.close();
+  if(this.view==='game'&&this.cardFlipped)this.resumeTurnTimer();
+ }
+ confirmHome():void{
+  if(!this.homeDialog.nativeElement.open)return;
+  this.homeDialog.nativeElement.close();
+  this.goHome();
+ }
  goHome():void{this.clearRevealTimer();this.clearTurnTimer();this.showStartRequirements=false;this.view='home';}
- openSettings():void{this.settingsTab='general';this.view='settings';}
+ openSettings():void{this.settingsTab='general';this.view='settings';this.prepareAudio();this.playSound('gear');}
  start():void{
   if(!this.canStart){this.showStartRequirements=true;return;}
   this.showStartRequirements=false;
   this.clearRevealTimer();this.clearTurnTimer();
   this.skipped=0;
   this.players=this.playerNames.map(name=>({name,score:0,roundScore:0,correct:0,errors:0}));
+  this.showFinalRanking=false;
   this.roundNumber=1;this.playerIndex=0;this.current=null;
   this.rerollExcludedId=null;
   this.expiredPlayerIndex=null;this.correctingExpiredTurn=false;
   this.remaining=this.characters.filter(p=>this.enabled.includes(p.category)).map(p=>p.id);
-  this.view='between';this.beginReveal();
+  this.view='between';this.beginReveal();this.playSound('newGame',false);
  }
  private pickNext(excludeId?:number):boolean{
   let candidates=this.remaining.filter(id=>id!==excludeId);
@@ -178,6 +240,15 @@ export class AppComponent implements OnInit, OnDestroy {
   }
   this.playSound('flip',false);
  }
+ toggleTurnTimer():void{
+  if(this.view!=='game'||!this.current||!this.cardFlipped)return;
+  if(this.turnTimerRunning)this.pauseTurnTimer();
+  else{
+   if(this.pausedTurnRemainingMs<=0)return;
+   this.resumeTurnTimer();
+  }
+  this.playSound('timerToggle');
+ }
  openScoring():void{
   if(this.view!=='game'||!this.current)return;
   if(this.cardFlipped)this.pauseTurnTimer();
@@ -191,7 +262,7 @@ export class AppComponent implements OnInit, OnDestroy {
   this.pausedTurnRemainingMs=0;
   this.finishTurn(false);
  }
- scoreCorrect(points:1|2|3):void{
+ scoreCorrect(points:number):void{
   const player=this.scoringPlayer;
   if(this.view!=='scoring'||!player)return;
   if(this.correctingExpiredTurn){
@@ -226,6 +297,13 @@ export class AppComponent implements OnInit, OnDestroy {
  private finishTurn(isCorrect:boolean,timedOut=false):void{
   if(!isCorrect){const player=this.activePlayer;if(player)player.errors++;this.playSound('error');}
   this.expiredPlayerIndex=timedOut?this.playerIndex:null;
+  if(timedOut){this.view='timeout';return;}
+  this.current=null;
+  if(this.playerIndex===this.players.length-1){this.view='roundResult';}
+  else{this.playerIndex++;this.view='between';}
+ }
+ continueAfterTimeout():void{
+  if(this.view!=='timeout')return;
   this.current=null;
   if(this.playerIndex===this.players.length-1){this.view='roundResult';}
   else{this.playerIndex++;this.view='between';}
@@ -233,6 +311,7 @@ export class AppComponent implements OnInit, OnDestroy {
  beginReveal():void{
   if(this.view!=='between'||this.revealTimer!==null)return;
   this.prepareAudio();
+  this.playBeep();
   this.countdown=this.revealDelay;
   this.revealTimer=setInterval(()=>{
    this.countdown--;
@@ -253,7 +332,7 @@ export class AppComponent implements OnInit, OnDestroy {
  private resumeTurnTimer():void{
   this.turnDeadline=performance.now()+this.pausedTurnRemainingMs;
   this.pausedTurnRemainingMs=0;
-  if(!this.hasTurnStarted){this.hasTurnStarted=true;this.playBeep();}
+  if(!this.hasTurnStarted)this.hasTurnStarted=true;
   this.scheduleTurnTick();
  }
  private pauseTurnTimer():void{
@@ -274,7 +353,7 @@ export class AppComponent implements OnInit, OnDestroy {
   const atFifteen=!this.fifteenSecondsVibrated&&remaining<=15;
   if(atHalf)this.halfTimeVibrated=true;
   if(atFifteen)this.fifteenSecondsVibrated=true;
-  if(remaining>0&&(atHalf||atFifteen)&&!this.vibrationUnavailable)void Haptics.vibrate({duration:atFifteen?500:250}).catch(()=>{});
+  if(remaining>0&&(atHalf||atFifteen)&&this.vibrationEnabled&&!this.vibrationUnavailable)void Haptics.vibrate({duration:atFifteen?500:250}).catch(()=>{});
   if(remaining>0&&atHalf)this.playSound('midpoint');
   if(remaining>0&&remaining<=10&&this.lastBeepSecond!==remaining){
    this.lastBeepSecond=remaining;this.playBeep();
@@ -283,9 +362,32 @@ export class AppComponent implements OnInit, OnDestroy {
   else this.scheduleTurnTick();
  }
  private prepareAudio():void{
+  if(!this.soundEnabled)return;
   try{
    const session=(navigator as Navigator & {audioSession?:{type:string}}).audioSession;
    if(session)session.type='playback';
+  }catch{}
+  try{
+   const AudioContextConstructor=window.AudioContext;
+   if(AudioContextConstructor){
+    if(!this.soundContext){
+     this.soundContext=new AudioContextConstructor();
+     this.soundBuffers={
+      beep:this.createSoundBuffer([{frequency:880,duration:0.14}]),
+      midpoint:this.createSoundBuffer([{frequency:880,duration:0.14},{frequency:0,duration:0.14},{frequency:880,duration:0.14}]),
+      success:this.createSoundBuffer([{frequency:523,duration:0.13},{frequency:659,duration:0.13},{frequency:784,duration:0.23}]),
+      error:this.createSoundBuffer([{frequency:280,duration:0.2},{frequency:210,duration:0.3}],true),
+      flip:this.createSoundBuffer([{frequency:720,duration:0.07},{frequency:520,duration:0.07},{frequency:360,duration:0.09}]),
+      gear:this.createSoundBuffer([{frequency:620,duration:0.045},{frequency:460,duration:0.055},{frequency:560,duration:0.045},{frequency:380,duration:0.075}],true),
+      save:this.createSoundBuffer([{frequency:660,duration:0.08},{frequency:880,duration:0.12}]),
+       timerToggle:this.createSoundBuffer([{frequency:520,duration:0.06},{frequency:390,duration:0.06}]),
+       celebration:this.createSoundBuffer([{frequency:523,duration:0.3},{frequency:659,duration:0.3},{frequency:784,duration:0.3},{frequency:1047,duration:0.6},{frequency:784,duration:0.3},{frequency:1047,duration:0.6},{frequency:1318,duration:0.6},{frequency:1047,duration:0.3},{frequency:1318,duration:1.7}]),
+       newGame:this.createSoundBuffer([{frequency:392,duration:0.09},{frequency:523,duration:0.09},{frequency:659,duration:0.13},{frequency:784,duration:0.22}])
+     };
+    }
+    void this.soundContext.resume().catch(()=>{});
+    return;
+   }
   }catch{}
   try{
    if(!this.soundAudio){
@@ -294,19 +396,47 @@ export class AppComponent implements OnInit, OnDestroy {
      midpoint:this.createSound([{frequency:880,duration:0.14},{frequency:0,duration:0.14},{frequency:880,duration:0.14}]),
      success:this.createSound([{frequency:523,duration:0.13},{frequency:659,duration:0.13},{frequency:784,duration:0.23}]),
      error:this.createSound([{frequency:280,duration:0.2},{frequency:210,duration:0.3}],true),
-     flip:this.createSound([{frequency:720,duration:0.07},{frequency:520,duration:0.07},{frequency:360,duration:0.09}])
+     flip:this.createSound([{frequency:720,duration:0.07},{frequency:520,duration:0.07},{frequency:360,duration:0.09}]),
+     gear:this.createSound([{frequency:620,duration:0.045},{frequency:460,duration:0.055},{frequency:560,duration:0.045},{frequency:380,duration:0.075}],true),
+     save:this.createSound([{frequency:660,duration:0.08},{frequency:880,duration:0.12}]),
+     timerToggle:this.createSound([{frequency:520,duration:0.06},{frequency:390,duration:0.06}]),
+     celebration:this.createSound([{frequency:523,duration:0.3},{frequency:659,duration:0.3},{frequency:784,duration:0.3},{frequency:1047,duration:0.6},{frequency:784,duration:0.3},{frequency:1047,duration:0.6},{frequency:1318,duration:0.6},{frequency:1047,duration:0.3},{frequency:1318,duration:1.7}]),
+     newGame:this.createSound([{frequency:392,duration:0.09},{frequency:523,duration:0.09},{frequency:659,duration:0.13},{frequency:784,duration:0.22}])
     };
     this.soundAudio={
      beep:new Audio(this.soundUrls.beep),
      midpoint:new Audio(this.soundUrls.midpoint),
      success:new Audio(this.soundUrls.success),
      error:new Audio(this.soundUrls.error),
-     flip:new Audio(this.soundUrls.flip)
+     flip:new Audio(this.soundUrls.flip),
+     gear:new Audio(this.soundUrls.gear),
+     save:new Audio(this.soundUrls.save),
+     timerToggle:new Audio(this.soundUrls.timerToggle),
+     celebration:new Audio(this.soundUrls.celebration),
+     newGame:new Audio(this.soundUrls.newGame)
     };
     for(const audio of Object.values(this.soundAudio)){audio.preload='auto';audio.load();}
    }
-   this.playBeep();
   }catch{}
+ }
+ private createSoundBuffer(notes:{frequency:number;duration:number}[],horn=false):AudioBuffer{
+  const context=this.soundContext!;
+  const sampleRate=context.sampleRate;
+  const sampleCount=Math.round(notes.reduce((total,note)=>total+note.duration,0)*sampleRate);
+  const buffer=context.createBuffer(1,sampleCount,sampleRate);
+  const samples=buffer.getChannelData(0);
+  let offset=0;
+  for(const note of notes){
+   const length=Math.round(note.duration*sampleRate);
+   for(let i=0;i<length&&offset+i<sampleCount;i++){
+    const fade=Math.min(1,i/(sampleRate*0.01),(length-i)/(sampleRate*0.03));
+    const phase=2*Math.PI*note.frequency*i/sampleRate;
+    const wave=horn?Math.sin(phase)+0.45*Math.sin(2*phase)+0.2*Math.sin(3*phase):Math.sin(phase);
+    samples[offset+i]=wave*fade*(horn?14000/32768:16000/32768);
+   }
+   offset+=length;
+  }
+  return buffer;
  }
  private createSound(notes:{frequency:number;duration:number}[],horn=false):string{
   const sampleRate=16000;
@@ -334,6 +464,23 @@ export class AppComponent implements OnInit, OnDestroy {
  }
  private playBeep():void{this.playSound('beep');}
  private playSound(kind:SoundKind,exclusive=true):void{
+  if(!this.soundEnabled)return;
+  const context=this.soundContext;
+  const buffer=this.soundBuffers?.[kind];
+  if(context&&buffer){
+   try{
+    if(context.state==='suspended')void context.resume().catch(()=>{});
+    if(exclusive)for(const sourceKind of this.soundSources.keys())this.stopSoundSource(sourceKind);
+    else this.stopSoundSource(kind);
+    const source=context.createBufferSource();
+    source.buffer=buffer;
+    source.connect(context.destination);
+    this.soundSources.set(kind,source);
+    source.onended=()=>{if(this.soundSources.get(kind)===source)this.soundSources.delete(kind);};
+    source.start();
+   }catch{}
+   return;
+  }
   const players=this.soundAudio;
   if(!players)return;
   const audio=players[kind];
@@ -343,13 +490,21 @@ export class AppComponent implements OnInit, OnDestroy {
    void audio.play().catch(()=>{});
   }catch{}
  }
+ private stopSoundSource(kind:SoundKind):void{
+  const source=this.soundSources.get(kind);
+  if(!source)return;
+  this.soundSources.delete(kind);
+  source.onended=null;
+  try{source.stop();}catch{}
+ }
  private clearTurnTimer():void{
   if(this.turnTimer!==null){clearTimeout(this.turnTimer);this.turnTimer=null;}
+  for(const kind of this.soundSources.keys())this.stopSoundSource(kind);
   if(this.soundAudio)Object.values(this.soundAudio).forEach(audio=>audio.pause());
  }
  nextRound():void{
   if(this.view!=='roundResult')return;
-  if(this.roundNumber===this.roundCount){this.view='finished';return;}
+  if(this.roundNumber===this.roundCount){this.view='finished';this.playSound('celebration');return;}
   this.expiredPlayerIndex=null;
   this.roundNumber++;this.playerIndex=0;
   this.players.forEach(player=>player.roundScore=0);

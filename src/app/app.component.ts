@@ -59,7 +59,7 @@ export class AppComponent implements OnInit, OnDestroy {
  readonly roundOptions=[1,2,3,5,7,8,10,15];
  readonly timeOptions=[30,60,90,120];
  readonly revealDelayOptions=[1,3,5,10];
- readonly bonusScoreOptions=[1,2,3];
+ readonly bonusScoreOptions=[0,1,2,3];
  readonly bonusQuestionOptions=[1,3,5,8];
  readonly baseScoreOptions=[1,2,3,5];
  readonly cluePenaltyOptions=[0,-1,-2,-3];
@@ -81,6 +81,7 @@ export class AppComponent implements OnInit, OnDestroy {
  playerNames:string[]=[];newPlayerName='';roundCount=3;turnDuration=60;revealDelay=5;
  players:Player[]=[];roundNumber=1;playerIndex=0;timeLeft=0;
  bonusScore=1;bonusQuestions=3;baseScore=2;cluePenalty=-1;
+ bonusEnabled=true;cluePenaltyEnabled=true;
  soundEnabled=true;vibrationEnabled=true;
  showFinalRanking=false;
  constructor(){addIcons({arrowBack,checkmark,close,refresh,settingsOutline,play,pause,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline,phonePortraitOutline});}
@@ -97,7 +98,11 @@ export class AppComponent implements OnInit, OnDestroy {
    const rounds=Number(await this.readSetting('adivina.rounds'));if(this.roundOptions.includes(rounds))this.roundCount=rounds;
    const duration=Number(await this.readSetting('adivina.duration'));if(this.timeOptions.includes(duration))this.turnDuration=duration;
    const revealDelay=Number(await this.readSetting('adivina.revealDelay'));if(this.revealDelayOptions.includes(revealDelay))this.revealDelay=revealDelay;
-   const bonusScore=Number(await this.readSetting('adivina.bonusScore'));if(this.bonusScoreOptions.includes(bonusScore))this.bonusScore=bonusScore;
+   const savedBonusScore=await this.readSetting('adivina.bonusScore');
+   if(savedBonusScore!==null){
+    const bonusScore=Number(savedBonusScore);
+    if(this.bonusScoreOptions.includes(bonusScore))this.bonusScore=bonusScore;
+   }
    const bonusQuestions=Number(await this.readSetting('adivina.bonusQuestions'));if(this.bonusQuestionOptions.includes(bonusQuestions))this.bonusQuestions=bonusQuestions;
    const baseScore=Number(await this.readSetting('adivina.baseScore'));if(this.baseScoreOptions.includes(baseScore))this.baseScore=baseScore;
    const savedCluePenalty=await this.readSetting('adivina.cluePenalty');
@@ -105,6 +110,8 @@ export class AppComponent implements OnInit, OnDestroy {
     const cluePenalty=Number(savedCluePenalty);
     if(this.cluePenaltyOptions.includes(cluePenalty))this.cluePenalty=cluePenalty;
    }
+   this.bonusEnabled=(await this.readSetting('adivina.bonusEnabled'))!=='false';
+   this.cluePenaltyEnabled=(await this.readSetting('adivina.cluePenaltyEnabled'))!=='false';
    this.soundEnabled=(await this.readSetting('adivina.soundEnabled'))!=='false';
    this.vibrationEnabled=(await this.readSetting('adivina.vibrationEnabled'))!=='false';
    const storedAccent=await this.readSetting('adivina.accent');if(this.accentOptions.some(option=>option.id===storedAccent))this.accentId=storedAccent as AccentId;
@@ -208,9 +215,11 @@ export class AppComponent implements OnInit, OnDestroy {
  setDuration(value:number):void{if(this.timeOptions.includes(value)){this.turnDuration=value;this.saveSetting('adivina.duration',String(value));}}
  setRevealDelay(value:number):void{if(this.revealDelayOptions.includes(value)){this.revealDelay=value;this.saveSetting('adivina.revealDelay',String(value));}}
  setBonusScore(value:number):void{if(this.bonusScoreOptions.includes(value)){this.bonusScore=value;this.saveSetting('adivina.bonusScore',String(value));}}
+ setBonusEnabled(enabled:boolean):void{this.bonusEnabled=enabled;this.saveSetting('adivina.bonusEnabled',String(enabled));}
  setBonusQuestions(value:number):void{if(this.bonusQuestionOptions.includes(value)){this.bonusQuestions=value;this.saveSetting('adivina.bonusQuestions',String(value));}}
  setBaseScore(value:number):void{if(this.baseScoreOptions.includes(value)){this.baseScore=value;this.saveSetting('adivina.baseScore',String(value));}}
  setCluePenalty(value:number):void{if(this.cluePenaltyOptions.includes(value)){this.cluePenalty=value;this.saveSetting('adivina.cluePenalty',String(value));}}
+ setCluePenaltyEnabled(enabled:boolean):void{this.cluePenaltyEnabled=enabled;this.saveSetting('adivina.cluePenaltyEnabled',String(enabled));}
  setSoundEnabled(enabled:boolean):void{
   this.soundEnabled=enabled;this.saveSetting('adivina.soundEnabled',String(enabled));
   if(enabled)this.prepareAudio();

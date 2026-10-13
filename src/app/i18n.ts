@@ -253,5 +253,7 @@ const messages: Record<string,string> = {
  "Activa al menos una categoría para empezar.": $localize`:@@s250:Activa al menos una categoría para empezar.`,
  "VOLVER A JUGADORES": $localize`:@@s251:VOLVER A JUGADORES`,
  "EMPEZAR PARTIDA": $localize`:@@s252:EMPEZAR PARTIDA`,
+ "Activar puntaje de bonificación": $localize`:@@s253:Activar puntaje de bonificación`,
+ "Activar puntaje al dar pista": $localize`:@@s254:Activar puntaje al dar pista`,
 };
 export function tr(source: string): string { return messages[source] ?? source; }

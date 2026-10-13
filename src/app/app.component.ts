@@ -49,7 +49,7 @@ export class AppComponent implements OnInit, OnDestroy {
  readonly roundOptions=[3,5,7,10];
  readonly timeOptions=[30,60,90,120];
  readonly revealDelayOptions=[1,3,5,10];
- readonly characterNameSizeOptions=[{id:'normal',label:'Normal'},{id:'large',label:'Grande'},{id:'huge',label:'Gigante'}] as const;
+ readonly characterNameSizeOptions=[{id:'normal',label:'Normal',size:36},{id:'large',label:'Grande',size:52},{id:'huge',label:'Gigante',size:68}] as const;
  readonly accentOptions=[
   {id:'green',label:'Verde',color:'#b4fa66',soft:'#72ce9b'},
   {id:'blue',label:'Azul',color:'#79baff',soft:'#7898ed'},

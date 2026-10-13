@@ -27,11 +27,10 @@
 .character-card.has-photo:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#0b102680 0%,transparent 34%,#0b102633 55%,#0b1026e8 100%);pointer-events:none;z-index:0}
 .character-card.has-photo .card-top,.character-card.has-photo .card-center,.character-card.has-photo .card-bottom{position:relative;z-index:1}
 .character-card.has-photo .card-center{margin-top:auto;padding-bottom:8px}
-.character-card.has-photo .card-center h2{font-size:clamp(30px,8vw,47px);margin:10px 0 14px;text-shadow:0 2px 14px #080d25,0 2px 4px #080d25}
-.character-card.name-size-large .card-center h2{font-size:clamp(42px,10.5vw,72px)}
-.character-card.name-size-huge .card-center h2{font-size:clamp(48px,12vw,84px)}
-.character-card.has-photo.name-size-large .card-center h2{font-size:clamp(35px,9.5vw,57px)}
-.character-card.has-photo.name-size-huge .card-center h2{font-size:clamp(40px,11vw,68px)}
+.character-card.has-photo .card-center h2{margin:10px 0 14px;text-shadow:0 2px 14px #080d25,0 2px 4px #080d25}
+.character-card.name-size-normal .card-center h2{font-size:36px}
+.character-card.name-size-large .card-center h2{font-size:52px}
+.character-card.name-size-huge .card-center h2{font-size:68px}
 .card-center h2{margin:0}
 .character-card{--card-inset:15px;--card-border-width:1px;border:var(--card-border-width) solid var(--accent)}
 .card-top{padding:var(--card-inset)}
@@ -42,6 +41,9 @@
 .card-panel .country{color:inherit;font-size:inherit;font-weight:inherit}
 .character-card .category-pill{border-color:var(--accent);color:var(--accent)}
 .card-timer.time-low{color:#ff849d}
+.character-card.name-size-preview{flex:0 0 150px;min-height:150px;max-height:150px;margin:0 0 14px}
+.character-card.name-size-preview:before{content:none}
+.name-size-preview-label{margin:15px 0 8px!important;color:#a8b2d3;font-size:11px!important;font-weight:800;letter-spacing:.7px}
 .settings-section>.capability-note{margin:12px 0 0;color:#f5bb85}
 .settings-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:24px;padding:4px;border:1px solid #344062;border-radius:16px;background:#202945}
 .settings-tabs button{min-width:0;min-height:44px;padding:8px 4px;border:0;border-radius:12px;background:transparent;color:#a8b2d3;font:inherit;font-size:11px;font-weight:900;letter-spacing:.4px}
@@ -75,6 +77,9 @@
 .player-row button:disabled{opacity:.35}
 .option-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .name-size-options{grid-template-columns:repeat(3,minmax(0,1fr))}
+.name-size-options button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.name-size-options button small{font-size:9px;font-weight:700;line-height:1.2;color:#a8b2d3}
+.name-size-options button.selected small{color:inherit;opacity:.8}
 .option-grid button{min-height:52px}
 .option-grid button.selected{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 20%,#232b4a);color:var(--ui-accent)}
 .settings>.primary-button{margin-top:10px;flex-shrink:0}

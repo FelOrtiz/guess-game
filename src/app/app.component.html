@@ -84,6 +84,10 @@
     </div>
     <div *ngIf="roundNumber>1 && activePlayer" class="current-standing" aria-live="polite"><span>{{tr("PUESTO HASTA AHORA")}}</span><strong>{{activePlayerRank}}° {{tr('lugar')}} <small>{{tr("de")}} {{players.length}}</small></strong></div>
     <p>{{tr("El personaje está oculto. Pasa el dispositivo a")}} {{activePlayer?.name}} {{tr("y presiona Iniciar cuando esté listo.")}}</p>
+    <div class="turn-phone-hint">
+     <span class="turn-phone-icon" aria-hidden="true"><ion-icon name="phone-portrait-outline"></ion-icon><ion-icon name="refresh"></ion-icon></span>
+     <span><strong>{{tr('GIRA EL TELÉFONO HACIA LOS DEMÁS')}}</strong><small>{{tr('No mires la carta del personaje.')}}</small></span>
+    </div>
     <button class="primary-button" (click)="beginReveal()" [disabled]="countdown > 0">
      <ion-icon name="play" *ngIf="countdown === 0" aria-hidden="true"></ion-icon>
      <span>{{countdown > 0 ? tr('CONTINUANDO EN ') + countdown + '…' : tr('INICIAR')}}</span>

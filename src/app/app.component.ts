@@ -8,7 +8,7 @@ import { Preferences } from '@capacitor/preferences';
 import { IonApp, IonContent, IonIcon, IonToggle, IonSpinner } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { tr } from './i18n';
-import { arrowBack, checkmark, close, refresh, settingsOutline, play, pause, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline } from 'ionicons/icons';
+import { arrowBack, checkmark, close, refresh, settingsOutline, play, pause, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline, phonePortraitOutline } from 'ionicons/icons';
 
 type View = 'home' | 'game' | 'scoring' | 'between' | 'timeout' | 'roundResult' | 'settings' | 'finished';
 type SettingsTab = 'general' | 'others' | 'players' | 'categories';
@@ -81,7 +81,7 @@ export class AppComponent implements OnInit, OnDestroy {
  bonusScore=1;bonusQuestions=3;baseScore=2;cluePenalty=-1;
  soundEnabled=true;vibrationEnabled=true;
  showFinalRanking=false;
- constructor(){addIcons({arrowBack,checkmark,close,refresh,settingsOutline,play,pause,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline});}
+ constructor(){addIcons({arrowBack,checkmark,close,refresh,settingsOutline,play,pause,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline,phonePortraitOutline});}
  async ngOnInit():Promise<void>{
   await this.restoreSettings();
   this.http.get<Character[]>('assets/character.json').subscribe({next:(people)=>{this.characters=people;this.loading=false;},error:()=>{this.loading=false;this.error=tr('No se pudo cargar el listado de personajes.');}});
@@ -98,7 +98,11 @@ export class AppComponent implements OnInit, OnDestroy {
    const bonusScore=Number(await this.readSetting('adivina.bonusScore'));if(this.bonusScoreOptions.includes(bonusScore))this.bonusScore=bonusScore;
    const bonusQuestions=Number(await this.readSetting('adivina.bonusQuestions'));if(this.bonusQuestionOptions.includes(bonusQuestions))this.bonusQuestions=bonusQuestions;
    const baseScore=Number(await this.readSetting('adivina.baseScore'));if(this.baseScoreOptions.includes(baseScore))this.baseScore=baseScore;
-   const cluePenalty=Number(await this.readSetting('adivina.cluePenalty'));if(this.cluePenaltyOptions.includes(cluePenalty))this.cluePenalty=cluePenalty;
+   const savedCluePenalty=await this.readSetting('adivina.cluePenalty');
+   if(savedCluePenalty!==null){
+    const cluePenalty=Number(savedCluePenalty);
+    if(this.cluePenaltyOptions.includes(cluePenalty))this.cluePenalty=cluePenalty;
+   }
    this.soundEnabled=(await this.readSetting('adivina.soundEnabled'))!=='false';
    this.vibrationEnabled=(await this.readSetting('adivina.vibrationEnabled'))!=='false';
    const storedAccent=await this.readSetting('adivina.accent');if(this.accentOptions.some(option=>option.id===storedAccent))this.accentId=storedAccent as AccentId;
@@ -256,7 +260,7 @@ export class AppComponent implements OnInit, OnDestroy {
   this.rerollExcludedId=null;
   this.expiredPlayerIndex=null;this.correctingExpiredTurn=false;
   this.remaining=this.characters.filter(p=>this.enabled.includes(p.category)).map(p=>p.id);
-  this.view='between';this.beginReveal();this.playSound('newGame',false);
+  this.view='between';this.playSound('newGame',false);
  }
  private pickNext(excludeId?:number):boolean{
   let candidates=this.remaining.filter(id=>id!==excludeId);

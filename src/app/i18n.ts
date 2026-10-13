@@ -242,5 +242,7 @@ const messages: Record<string,string> = {
  "Planeta Vegeta (ficcional)": $localize`:@@s239:Planeta Vegeta (ficcional)`,
  "Reino Muy Muy Lejano (ficcional)": $localize`:@@s240:Reino Muy Muy Lejano (ficcional)`,
  "Temeria (ficcional)": $localize`:@@s241:Temeria (ficcional)`,
+ "GIRA EL TELÉFONO HACIA LOS DEMÁS": $localize`:@@s242:GIRA EL TELÉFONO HACIA LOS DEMÁS`,
+ "No mires la carta del personaje.": $localize`:@@s243:No mires la carta del personaje.`,
 };
 export function tr(source: string): string { return messages[source] ?? source; }

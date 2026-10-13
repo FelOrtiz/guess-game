@@ -53,10 +53,15 @@
 .accent-choice.selected{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 17%,#232b4a);color:var(--ui-accent)}
 .accent-choice:focus-visible{outline:2px solid var(--ui-accent);outline-offset:2px}
 .accent-swatch{width:25px;height:25px;border-radius:50%;background:var(--choice-color);box-shadow:0 0 0 2px #ffffff26}
-.home .primary-button[aria-disabled="true"]{opacity:.45}
-.start-requirements{width:100%;margin-top:14px;padding:12px 16px;border:1px solid #f5bb8566;border-radius:14px;background:#f5bb8517;color:#f5bb85;font-size:13px;line-height:1.4;text-align:left}
-.start-requirements p{margin:0}
-.start-requirements p+p{margin-top:6px}
+.game-setup .setup-progress{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.setup-progress span{padding:9px 12px;border:1px solid #465478;border-radius:12px;background:#202945;color:#a8b2d3;font-size:11px;font-weight:850}
+.setup-progress span.complete{border-color:var(--ui-accent);color:var(--ui-accent)}
+.game-setup .settings-section{margin-top:26px}
+.game-setup .setup-requirement{margin:20px 0 0;color:#f5bb85;font-size:12px}
+.setup-next{width:100%;margin-top:24px}
+.setup-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}
+.setup-actions.single{grid-template-columns:1fr}
+.setup-actions button{min-width:0;padding:8px;font-size:11px;text-align:center}
 .settings-head{gap:10px}
 .category-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
 .settings-head button:disabled{opacity:.45}
@@ -64,7 +69,7 @@
 .settings-section h2{font-size:19px;margin:0 0 6px}
 .settings-section>p{font-size:12px;color:#a8b2d3;line-height:1.5;margin:0 0 15px}
 .add-player{display:flex;gap:9px}
-.add-player input{flex:1;min-width:0;border:1px solid #465478;background:#202945;color:#fff;border-radius:13px;padding:12px;font:inherit;font-size:14px}
+.add-player input{flex:1;min-width:0;border:1px solid #465478;background:#202945;color:#fff;border-radius:13px;padding:12px;font:inherit;font-size:16px}
 .add-player button,.option-grid button{border:1px solid #465478;background:#232b4a;color:#e5e9ff;border-radius:13px;padding:11px;font-weight:850;font-size:11px}
 .player-list{display:grid;gap:8px;margin-top:12px}
 .player-row{display:flex;align-items:center;gap:8px;background:#202945;border:1px solid #344062;border-radius:13px;padding:8px}
@@ -122,8 +127,9 @@
 .current-standing>span{font-size:10px;font-weight:900;letter-spacing:.8px;color:#a8b2d3}
 .current-standing strong{color:var(--ui-accent);font-size:15px}
 .current-standing strong small{color:#a8b2d3;font-size:11px;font-weight:700}
-.game .character-card{max-height:600px}
+.game .character-card{max-height:none;margin-bottom:0}
 .game-actions{display:flex;align-items:stretch;gap:10px;width:100%}
+.card-back-actions{position:absolute;right:18px;bottom:18px;left:18px;z-index:1;width:auto}
 .game .score-button{flex:1;width:auto;min-height:60px}
 .pause-button{display:grid;place-items:center;flex:0 0 60px;min-height:60px;border:1px solid #3a456a;border-radius:19px;background:#232b4a;color:#e5e9ff;font-size:24px}
 .pause-button:focus-visible{outline:2px solid var(--ui-accent);outline-offset:3px}
@@ -141,7 +147,7 @@
 .character-card.has-photo .card-front:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#0b102680 0%,transparent 34%,#0b102633 55%,#0b1026e8 100%);pointer-events:none;z-index:0}
 .card-back{align-items:center;justify-content:center;transform:rotateY(180deg);border:2px solid transparent;background:radial-gradient(ellipse at center,#273256 0%,#17203d 60%,#131b36 100%) padding-box,conic-gradient(from -90deg,var(--ui-accent) var(--time-progress),#465478 0) border-box}
 .character-card.flipped.time-low .card-back{background:radial-gradient(ellipse at center,#273256 0%,#17203d 60%,#131b36 100%) padding-box,conic-gradient(from -90deg,#ff849d var(--time-progress),#465478 0) border-box}
-.character-card .card-back-timer{min-width:0;padding:18px 24px;font-size:clamp(56px,15vw,88px);font-variant-numeric:tabular-nums}
+.character-card .card-back-timer{position:absolute;top:43%;left:50%;transform:translate(-50%,-50%);min-width:0;padding:18px 24px;font-size:clamp(56px,15vw,88px);font-variant-numeric:tabular-nums}
 .character-card .card-timer.time-low{color:#ff849d}
 .timeout-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:18px 0;text-align:center}
 .timeout-screen .section-kicker{color:#ff849d}
@@ -197,3 +203,14 @@
 @keyframes confetti-fall{to{transform:translate3d(35px,110dvh,0) rotate(720deg)}}
 @media(prefers-reduced-motion:reduce){.confetti span{animation:none;display:none}}
 @media(max-height:720px){.scoring{gap:10px;padding:10px 0}.scoring .between-symbol{width:80px;height:80px;border-radius:22px;font-size:62px;margin-bottom:4px}.scoring h1{font-size:34px}.scoring p{font-size:13px}.score-options{gap:8px;margin-top:4px}.score-options button{min-height:56px}.score-incorrect{min-height:54px}}
+@media(max-height:700px){
+ .home{justify-content:safe center;padding-top:0}
+ .home .hero-symbol{width:82px;height:82px;margin-bottom:12px}
+ .home .hero-symbol>span:first-child{font-size:64px}
+ .home .hero-orbit{right:-12px;top:-12px;font-size:32px}
+ .home h1{font-size:60px;letter-spacing:-4px;margin:8px 0 10px}
+ .home-actions{gap:8px;margin-top:14px}
+ .home-actions button{min-height:52px}
+ .home-stats{margin-top:12px;flex-shrink:0}
+ .home-stats strong{font-size:22px}
+}

@@ -10,7 +10,8 @@ import { addIcons } from 'ionicons';
 import { tr } from './i18n';
 import { arrowBack, checkmark, close, refresh, settingsOutline, play, pause, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline, phonePortraitOutline } from 'ionicons/icons';
 
-type View = 'home' | 'game' | 'scoring' | 'between' | 'timeout' | 'roundResult' | 'settings' | 'finished';
+type View = 'home' | 'setup' | 'game' | 'scoring' | 'between' | 'timeout' | 'roundResult' | 'settings' | 'finished';
+type SetupStep = 'players' | 'categories';
 type SettingsTab = 'general' | 'others' | 'players' | 'categories';
 type AccentId = 'green' | 'blue' | 'red' | 'yellow' | 'orange';
 type CharacterNameSize = 'normal' | 'large' | 'huge';
@@ -74,7 +75,8 @@ export class AppComponent implements OnInit, OnDestroy {
  characterNameSize:CharacterNameSize='normal';
  view:View='home'; characters:Character[]=[]; enabled:string[]=[...this.allCategoryNames];
  settingsTab:SettingsTab='general';
- showStartRequirements=false;
+ setupStep:SetupStep='players';
+ setupStartedWithPlayers=false;
  current:Character|null=null; cardFlipped=false; hasTurnStarted=false; remaining:number[]=[]; skipped=0;loading=true;error=''; countdown=0;
  playerNames:string[]=[];newPlayerName='';roundCount=3;turnDuration=60;revealDelay=5;
  players:Player[]=[];roundNumber=1;playerIndex=0;timeLeft=0;
@@ -230,7 +232,7 @@ export class AppComponent implements OnInit, OnDestroy {
  timeLabel(seconds:number):string{return seconds===30?`30 ${tr('seg')}`:seconds===60?'1 min':seconds===90?`1 min 30 ${tr('seg')}`:'2 min';}
  requestHome():void{
   if(this.homeDialog.nativeElement.open)return;
-  if(this.view==='settings'){this.goHome();return;}
+  if(this.view==='settings'||this.view==='setup'){this.goHome();return;}
   if(this.view==='game'&&this.cardFlipped){
    this.pauseTurnTimer();
    if(this.pausedTurnRemainingMs===0){this.finishTurn(false,true);return;}
@@ -247,11 +249,27 @@ export class AppComponent implements OnInit, OnDestroy {
   this.homeDialog.nativeElement.close();
   this.goHome();
  }
- goHome():void{this.clearRevealTimer();this.clearTurnTimer();this.showStartRequirements=false;this.view='home';}
+ goHome():void{this.clearRevealTimer();this.clearTurnTimer();this.view='home';}
  openSettings():void{this.settingsTab='general';this.view='settings';this.prepareAudio();this.playSound('gear');}
+ openSetup():void{
+  if(this.canStart){this.beginNewGame();return;}
+  this.setupStartedWithPlayers=this.playerNames.length<2;
+  this.setupStep=this.setupStartedWithPlayers?'players':'categories';
+  this.view='setup';
+ }
+ nextSetupStep():void{
+  if(this.playerNames.length<2)return;
+  if(this.canStart)this.beginNewGame();
+  else this.setupStep='categories';
+ }
  start():void{
-  if(!this.canStart){this.showStartRequirements=true;return;}
-  this.showStartRequirements=false;
+  if(this.view!=='setup'||this.setupStep!=='categories'||!this.canStart)return;
+  this.beginNewGame();
+ }
+ replay():void{
+  if(this.view==='finished'&&this.canStart)this.beginNewGame();
+ }
+ private beginNewGame():void{
   this.clearRevealTimer();this.clearTurnTimer();
   this.skipped=0;
   this.players=this.playerNames.map(name=>({name,score:0,roundScore:0,correct:0,errors:0}));

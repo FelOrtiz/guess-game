@@ -244,5 +244,14 @@ const messages: Record<string,string> = {
  "Temeria (ficcional)": $localize`:@@s241:Temeria (ficcional)`,
  "GIRA EL TELÉFONO HACIA LOS DEMÁS": $localize`:@@s242:GIRA EL TELÉFONO HACIA LOS DEMÁS`,
  "No mires la carta del personaje.": $localize`:@@s243:No mires la carta del personaje.`,
+ "PREPARA TU PARTIDA": $localize`:@@s244:PREPARA TU PARTIDA`,
+ "Nuevo": $localize`:@@s245:Nuevo`,
+ "juego": $localize`:@@s246:juego`,
+ "Necesitas al menos 2 jugadores y 1 categoría activa para empezar.": $localize`:@@s247:Necesitas al menos 2 jugadores y 1 categoría activa para empezar.`,
+ "Agrega al menos dos jugadores para continuar.": $localize`:@@s248:Agrega al menos dos jugadores para continuar.`,
+ "SIGUIENTE": $localize`:@@s249:SIGUIENTE`,
+ "Activa al menos una categoría para empezar.": $localize`:@@s250:Activa al menos una categoría para empezar.`,
+ "VOLVER A JUGADORES": $localize`:@@s251:VOLVER A JUGADORES`,
+ "EMPEZAR PARTIDA": $localize`:@@s252:EMPEZAR PARTIDA`,
 };
 export function tr(source: string): string { return messages[source] ?? source; }

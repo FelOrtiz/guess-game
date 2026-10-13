@@ -17,16 +17,37 @@
     <h1>{{tr("¿QUIÉN")}}<br/><em>{{tr("SOY?")}}</em></h1>
     <p class="tagline">{{availableCount}} {{tr('personajes')}}. {{categoryCount}} {{categoryCount===1 ? tr('categoría') : tr('categorías')}}.<br/>{{tr("Infinitas preguntas para adivinar.")}}</p>
     <div class="home-actions">
-     <button class="primary-button" (click)="start()" [attr.aria-disabled]="!canStart" [attr.aria-describedby]="!canStart && showStartRequirements ? 'start-requirements' : null"><ion-icon name="play"></ion-icon> {{tr("NUEVO JUEGO")}} <span class="button-arrow">↗</span></button>
+     <button class="primary-button" (click)="openSetup()"><ion-icon name="play"></ion-icon> {{tr("NUEVO JUEGO")}} <span class="button-arrow">↗</span></button>
      <button class="secondary-button" (click)="openSettings()"><ion-icon name="settings-outline"></ion-icon> {{tr("CONFIGURAR")}}</button>
-    </div>
-    <div class="start-requirements" id="start-requirements" *ngIf="showStartRequirements && !canStart" role="alert">
-     <p *ngIf="playerNames.length<2">{{tr("Agrega al menos dos jugadores en Configurar.")}}</p>
-     <p *ngIf="!categoryCount">{{tr("Activa al menos una categoría en Configurar.")}}</p>
-     <p *ngIf="categoryCount && !availableCount">{{tr("No hay personajes disponibles en las categorías activas.")}}</p>
     </div>
     <div class="home-stats"><div><strong>{{availableCount}}</strong><small>{{tr("PERSONAJES")}}</small></div><div class="stat-line"></div><div><strong>{{categoryCount}}</strong><small>{{tr("CATEGORÍAS ACTIVAS")}}</small></div></div>
     <p class="hint" *ngIf="error">{{error}}</p>
+   </main>
+   <main *ngIf="view==='setup'" class="settings game-setup fade">
+    <div class="section-kicker">{{tr('PREPARA TU PARTIDA')}}</div>
+    <h1>{{tr('Nuevo')}}<br/><em>{{tr('juego')}}</em></h1>
+    <p>{{tr('Necesitas al menos 2 jugadores y 1 categoría activa para empezar.')}}</p>
+    <div class="setup-progress" aria-live="polite">
+     <span [class.complete]="playerNames.length>=2">{{playerNames.length>=2 ? '✓' : '1'}} {{tr('JUGADORES')}} ({{playerNames.length}}/2)</span>
+     <span [class.complete]="categoryCount>0 && availableCount>0">{{categoryCount>0 && availableCount>0 ? '✓' : '2'}} {{tr('CATEGORÍAS')}} ({{categoryCount}}/1)</span>
+    </div>
+    <ng-container *ngIf="setupStep==='players'">
+     <section class="settings-section"><h2>{{tr('Jugadores')}}</h2><p>{{tr('El orden de esta lista será el orden de los turnos.')}}</p>
+      <form class="add-player" (ngSubmit)="addPlayer()"><input name="setupPlayerName" [(ngModel)]="newPlayerName" maxlength="30" [attr.placeholder]="tr('Nombre del jugador')" [attr.aria-label]="tr('Nombre del jugador')"/><button type="submit">{{tr('AGREGAR')}}</button></form>
+      <div class="player-list"><div class="player-row" *ngFor="let name of playerNames;let i=index"><span class="player-position">{{i+1}}</span><strong>{{name}}</strong><button (click)="movePlayer(i,-1)" [disabled]="i===0" [attr.aria-label]="tr('Subir a')+' '+name">↑</button><button (click)="movePlayer(i,1)" [disabled]="i===playerNames.length-1" [attr.aria-label]="tr('Bajar a')+' '+name">↓</button><button (click)="removePlayer(i)" [attr.aria-label]="tr('Quitar a')+' '+name">×</button></div></div>
+     </section>
+     <p class="setup-requirement" *ngIf="playerNames.length<2" role="status">{{tr('Agrega al menos dos jugadores para continuar.')}}</p>
+     <button type="button" class="primary-button setup-next" (click)="nextSetupStep()" [disabled]="playerNames.length<2">{{canStart ? tr('EMPEZAR PARTIDA') : tr('SIGUIENTE')}} <span aria-hidden="true">↗</span></button>
+    </ng-container>
+    <ng-container *ngIf="setupStep==='categories'">
+     <section class="settings-section"><h2>{{tr('Categorías')}}</h2><p>{{tr('Elige qué personajes pueden aparecer durante el juego.')}}</p>
+      <div class="settings-head"><strong>{{categoryCount}} {{tr('de')}} {{categories.length}} {{tr('activas')}}</strong><div class="category-actions"><button type="button" (click)="selectAll()" [disabled]="categoryCount===categories.length">{{tr('Seleccionar todas')}}</button><button type="button" (click)="deselectAll()" [disabled]="categoryCount===0">{{tr('Deseleccionar todas')}}</button></div></div>
+      <div class="category-list"><div class="category-row" *ngFor="let cat of categories"><span class="category-emoji" [style.background]="cat.light">{{cat.icon}}</span><div class="category-copy"><strong>{{tr(cat.name)}}</strong><small>{{tr('50 personajes')}}</small></div><ion-toggle [checked]="isEnabled(cat.name)" (ionChange)="toggle(cat.name,$event.detail.checked)" [attr.aria-label]="tr(cat.name)"></ion-toggle></div></div>
+     </section>
+     <p class="setup-requirement" *ngIf="!categoryCount" role="status">{{tr('Activa al menos una categoría para empezar.')}}</p>
+     <p class="setup-requirement" *ngIf="categoryCount>0 && !availableCount" role="status">{{tr('No hay personajes disponibles en las categorías activas.')}}</p>
+     <div class="setup-actions" [class.single]="!setupStartedWithPlayers"><button *ngIf="setupStartedWithPlayers" type="button" class="secondary-button" (click)="setupStep='players'">{{tr('VOLVER A JUGADORES')}}</button><button type="button" class="primary-button" (click)="start()" [disabled]="!canStart">{{tr('EMPEZAR PARTIDA')}}</button></div>
+    </ng-container>
    </main>
    <main *ngIf="view==='game' && current" class="game fade">
     <div class="game-meta"><span>{{tr("RONDA")}} {{roundNumber}} {{tr("DE")}} {{roundCount}}</span><strong class="game-player">{{activePlayer?.name}}</strong><span>{{tr("TURNO")}} {{playerIndex+1}} {{tr("DE")}} {{players.length}}</span></div>
@@ -39,13 +60,15 @@
        <div class="card-center"><h2>{{current.name}}</h2></div>
        <div class="card-bottom"><span class="category-pill card-panel">{{category?.icon}} {{tr(current.category)}}</span><span class="card-timer card-panel" [class.time-low]="timeLeft<=10" [attr.aria-label]="tr('Tiempo restante:')+' '+formattedTime">{{formattedTime}}</span></div>
       </div>
-      <div class="card-face card-back" [attr.aria-hidden]="!cardFlipped"><span class="card-timer card-panel card-back-timer" [class.time-low]="timeLeft<=10" [attr.aria-label]="tr('Tiempo restante:')+' '+formattedTime">{{formattedTime}}</span></div>
+      <div class="card-face card-back" [attr.aria-hidden]="!cardFlipped">
+       <span class="card-timer card-panel card-back-timer" [class.time-low]="timeLeft<=10" [attr.aria-label]="tr('Tiempo restante:')+' '+formattedTime">{{formattedTime}}</span>
+       <div *ngIf="cardFlipped" class="game-actions card-back-actions" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+        <button type="button" class="primary-button score-button" (click)="openScoring()">{{tr("PUNTUAR")}}</button>
+        <button type="button" class="pause-button" (click)="toggleTurnTimer()" [attr.aria-label]="turnTimerRunning ? tr('Pausar tiempo') : tr('Continuar tiempo')"><ion-icon [name]="turnTimerRunning ? 'pause' : 'play'" aria-hidden="true"></ion-icon></button>
+       </div>
+      </div>
      </div>
     </section>
-    <div *ngIf="cardFlipped" class="game-actions">
-     <button class="primary-button score-button" (click)="openScoring()">{{tr("PUNTUAR")}}</button>
-     <button type="button" class="pause-button" (click)="toggleTurnTimer()" [attr.aria-label]="turnTimerRunning ? tr('Pausar tiempo') : tr('Continuar tiempo')"><ion-icon [name]="turnTimerRunning ? 'pause' : 'play'" aria-hidden="true"></ion-icon></button>
-    </div>
    </main>
    <main *ngIf="view==='timeout' && current" class="timeout-screen fade">
     <div class="section-kicker">{{tr("TIEMPO AGOTADO")}}</div>
@@ -155,7 +178,7 @@
       <span>{{player.score}} {{tr('puntos')}} · {{player.errors}} {{tr("errores")}}</span>
      </div>
     </div>
-    <button class="primary-button" (click)="start()" [disabled]="!canStart"><span>{{tr("JUGAR DE NUEVO")}}</span><span class="button-arrow" aria-hidden="true">↗</span></button>
+    <button class="primary-button" (click)="replay()" [disabled]="!canStart"><span>{{tr("JUGAR DE NUEVO")}}</span><span class="button-arrow" aria-hidden="true">↗</span></button>
     <button class="secondary-button" (click)="requestHome()">{{tr("VOLVER AL INICIO")}}</button>
    </main>
   </ng-container>

@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "cl.juego.adivinapersonaje"
+    namespace "cl.game.characterguess"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "cl.juego.adivinapersonaje"
+        applicationId "cl.game.characterguess"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

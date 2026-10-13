@@ -7,10 +7,11 @@ import { Haptics } from '@capacitor/haptics';
 import { Preferences } from '@capacitor/preferences';
 import { IonApp, IonContent, IonIcon, IonToggle, IonSpinner } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
+import { tr } from './i18n';
 import { arrowBack, checkmark, close, refresh, settingsOutline, play, pause, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline } from 'ionicons/icons';
 
 type View = 'home' | 'game' | 'scoring' | 'between' | 'timeout' | 'roundResult' | 'settings' | 'finished';
-type SettingsTab = 'general' | 'visual' | 'players' | 'categories';
+type SettingsTab = 'general' | 'others' | 'players' | 'categories';
 type AccentId = 'green' | 'blue' | 'red' | 'yellow' | 'orange';
 type CharacterNameSize = 'normal' | 'large' | 'huge';
 type SoundKind = 'beep' | 'midpoint' | 'success' | 'error' | 'flip' | 'gear' | 'save' | 'timerToggle' | 'celebration' | 'newGame';
@@ -29,6 +30,8 @@ const CATEGORY_DATA:Category[] = [
 ];
 @Component({selector:'app-root',standalone:true,imports:[CommonModule,FormsModule,IonApp,IonContent,IonIcon,IonToggle,IonSpinner],templateUrl:'./app.component.html',styleUrls:['./app.component.scss']})
 export class AppComponent implements OnInit, OnDestroy {
+ readonly tr=tr;
+ readonly language: 'es'|'en'=localStorage.getItem('adivina.language')==='en'?'en':'es';
  @ViewChild('rerollDialog',{static:true}) private rerollDialog!:ElementRef<HTMLDialogElement>;
  @ViewChild('homeDialog',{static:true}) private homeDialog!:ElementRef<HTMLDialogElement>;
  private http=inject(HttpClient);
@@ -81,7 +84,7 @@ export class AppComponent implements OnInit, OnDestroy {
  constructor(){addIcons({arrowBack,checkmark,close,refresh,settingsOutline,play,pause,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline});}
  async ngOnInit():Promise<void>{
   await this.restoreSettings();
-  this.http.get<Character[]>('assets/character.json').subscribe({next:(people)=>{this.characters=people;this.loading=false;},error:()=>{this.loading=false;this.error='No se pudo cargar el listado de personajes.';}});
+  this.http.get<Character[]>('assets/character.json').subscribe({next:(people)=>{this.characters=people;this.loading=false;},error:()=>{this.loading=false;this.error=tr('No se pudo cargar el listado de personajes.');}});
  }
  private async restoreSettings():Promise<void>{
   try{
@@ -101,7 +104,7 @@ export class AppComponent implements OnInit, OnDestroy {
    const storedAccent=await this.readSetting('adivina.accent');if(this.accentOptions.some(option=>option.id===storedAccent))this.accentId=storedAccent as AccentId;
    const storedNameSize=await this.readSetting('adivina.characterNameSize');if(this.characterNameSizeOptions.some(option=>option.id===storedNameSize))this.characterNameSize=storedNameSize as CharacterNameSize;
   }catch{
-   this.error='No se pudo cargar toda la configuración guardada.';
+   this.error=tr('No se pudo cargar toda la configuración guardada.');
   }
  }
  private async readSetting(key:string):Promise<string|null>{
@@ -110,12 +113,12 @@ export class AppComponent implements OnInit, OnDestroy {
    const {value}=await Preferences.get({key});
    if(value!==null)return value;
   }catch{
-   this.error='No se pudo leer la configuración nativa; se intentará recuperar la copia local.';
+   this.error=tr('No se pudo leer la configuración nativa; se intentará recuperar la copia local.');
   }
   const legacyValue=localStorage.getItem(key);
   if(legacyValue!==null){
    try{await Preferences.set({key,value:legacyValue});}
-   catch{this.error='No se pudo migrar toda la configuración al almacenamiento nativo.';}
+   catch{this.error=tr('No se pudo migrar toda la configuración al almacenamiento nativo.');}
   }
   return legacyValue;
  }
@@ -123,11 +126,11 @@ export class AppComponent implements OnInit, OnDestroy {
   let localCopySaved=false;
   try{localStorage.setItem(key,value);localCopySaved=true;}catch{}
   if(!Capacitor.isNativePlatform()){
-   if(!localCopySaved)this.error='No se pudo guardar la configuración en el dispositivo.';
+   if(!localCopySaved)this.error=tr('No se pudo guardar la configuración en el dispositivo.');
    return;
   }
   this.settingsWriteQueue=this.settingsWriteQueue.then(async()=>{await Preferences.set({key,value});}).catch(()=>{
-   this.error=localCopySaved?'No se pudo guardar en almacenamiento nativo; se conserva la copia local.':'No se pudo guardar la configuración en el dispositivo.';
+   this.error=tr(localCopySaved?'No se pudo guardar en almacenamiento nativo; se conserva la copia local.':'No se pudo guardar la configuración en el dispositivo.');
   });
  }
  ngOnDestroy():void{
@@ -152,8 +155,8 @@ export class AppComponent implements OnInit, OnDestroy {
  get roundWinners():Player[]{const highest=Math.max(...this.players.map(p=>p.roundScore));return this.players.filter(p=>p.roundScore===highest);}
  get finalWinners():Player[]{const highest=Math.max(...this.players.map(p=>p.score));return this.players.filter(p=>p.score===highest);}
  get rankedPlayers():Player[]{return [...this.players].sort((a,b)=>b.score-a.score);}
- get roundWinnerNames():string{return this.roundWinners.map(p=>p.name).join(' y ');}
- get finalWinnerNames():string{return this.finalWinners.map(p=>p.name).join(' y ');}
+ get roundWinnerNames():string{return this.roundWinners.map(p=>p.name).join(this.language==='en'?' and ':' y ');}
+ get finalWinnerNames():string{return this.finalWinners.map(p=>p.name).join(this.language==='en'?' and ':' y ');}
  get formattedTime():string{return `${Math.floor(this.timeLeft/60)}:${String(this.timeLeft%60).padStart(2,'0')}`;}
  signedScore(score:number):string{return score>0?`+${score}`:String(score);}
  get characterAge():number|null{
@@ -172,7 +175,7 @@ export class AppComponent implements OnInit, OnDestroy {
   const match:[string,string][]=[['Chile','🇨🇱'],['Estados Unidos','🇺🇸'],['Japón','🇯🇵'],['Italia','🇮🇹'],['Reino Unido','🇬🇧'],['Francia','🇫🇷'],['Alemania','🇩🇪'],['España','🇪🇸'],['Canadá','🇨🇦'],['México','🇲🇽'],['Argentina','🇦🇷'],['Brasil','🇧🇷'],['Australia','🇦🇺'],['Suecia','🇸🇪'],['Polonia','🇵🇱'],['Corea del Sur','🇰🇷'],['Puerto Rico','🇵🇷'],['Colombia','🇨🇴'],['Portugal','🇵🇹'],['Egipto','🇪🇬'],['India','🇮🇳'],['China','🇨🇳'],['Rusia','🇷🇺'],['Países Bajos','🇳🇱'],['Jamaica','🇯🇲'],['Barbados','🇧🇧'],['Serbia','🇷🇸'],['Austria','🇦🇹'],['Grecia','🇬🇷'],['Sudáfrica','🇿🇦'],['Noruega','🇳🇴'],['Suiza','🇨🇭'],['Bélgica','🇧🇪'],['Croacia','🇭🇷'],['Egipto antiguo','🇪🇬'],['Georgia','🇬🇪'],['Cabo Verde','🇨🇻'],['Uruguay','🇺🇾'],['Perú','🇵🇪'],['Nigeria','🇳🇬'],['Irlanda','🇮🇪'],['Nueva Zelanda','🇳🇿']];
   const found=match.find(([country])=>raw.startsWith(country));return found?found[1]:'🌐';
  }
- get countryLabel():string{return this.current?.nationality||'No especificada';}
+ get countryLabel():string{return tr(this.current?.nationality||'No especificada');}
  isEnabled(name:string):boolean{return this.enabled.includes(name);}
  toggle(name:string,on:boolean):void{
   if(on){if(!this.enabled.includes(name))this.enabled=[...this.enabled,name];}
@@ -215,7 +218,12 @@ export class AppComponent implements OnInit, OnDestroy {
  }
  setAccent(id:AccentId):void{this.accentId=id;this.saveSetting('adivina.accent',id);}
  setCharacterNameSize(size:CharacterNameSize):void{this.characterNameSize=size;this.saveSetting('adivina.characterNameSize',size);}
- timeLabel(seconds:number):string{return seconds===30?'30 seg':seconds===60?'1 min':seconds===90?'1 min 30 seg':'2 min';}
+ setLanguage(language:'es'|'en'):void{
+  if(language===this.language)return;
+  this.saveSetting('adivina.language',language);
+  window.location.reload();
+ }
+ timeLabel(seconds:number):string{return seconds===30?`30 ${tr('seg')}`:seconds===60?'1 min':seconds===90?`1 min 30 ${tr('seg')}`:'2 min';}
  requestHome():void{
   if(this.homeDialog.nativeElement.open)return;
   if(this.view==='settings'){this.goHome();return;}
@@ -356,7 +364,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.clearRevealTimer();this.expiredPlayerIndex=null;
     const excludedId=this.rerollExcludedId??undefined;
     this.rerollExcludedId=null;
-    if(!this.pickNext(excludedId)){this.error='No hay otro personaje disponible.';this.goHome();return;}
+    if(!this.pickNext(excludedId)){this.error=tr('No hay otro personaje disponible.');this.goHome();return;}
     this.view='game';this.prepareTurnTimer();
    }
   },1000);

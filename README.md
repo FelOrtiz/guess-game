@@ -23,6 +23,15 @@ npm start
 ```
 Abre http://localhost:4200.
 
+## Publicar en GitHub Pages
+
+El sitio se publica en https://felortiz.github.io/guess-game/ mediante el workflow de GitHub Actions en `.github/workflows/deploy-pages.yml`.
+
+1. En GitHub, abre **Settings → Pages** del repositorio y selecciona **GitHub Actions** como fuente de publicación.
+2. Confirma que los cambios estén subidos a la rama `main`. Cada push a `main` compila y publica el sitio. También puedes iniciarlo manualmente en **Actions → Deploy GitHub Pages → Run workflow**.
+
+Para revisar la compilación de Pages en tu equipo, ejecuta `npm run build:pages`. El resultado queda en `dist/pages/browser`; `npm run build` sigue generando la versión para Capacitor en `www/browser`.
+
 Al probar desde Safari en iPhone mediante un túnel, los pitidos deben sonar al tocar «Iniciar» y durante el turno. Safari no ofrece `navigator.vibrate`, por lo que la vibración solo se puede probar con la app iOS instalada desde Xcode mediante Capacitor.
 
 ## Compilar para Android

@@ -1,177 +1,178 @@
 <ion-app [style.--ui-accent]="accentColor.color" [style.--ui-accent-soft]="accentColor.soft" [style.--ion-color-primary]="accentColor.color"><ion-content [fullscreen]="true" class="screen">
  <div class="shell">
-  <ng-container *ngIf="loading"><div class="loading"><ion-spinner name="crescent"></ion-spinner><p>Cargando personajes...</p></div></ng-container>
+  <ng-container *ngIf="loading"><div class="loading"><ion-spinner name="crescent"></ion-spinner><p>{{tr("Cargando personajes...")}}</p></div></ng-container>
   <ng-container *ngIf="!loading">
    <header class="topbar">
-    <button class="icon-button back" *ngIf="view !== 'home' && view !== 'scoring' && view !== 'finished'" (click)="requestHome()" aria-label="Volver al inicio"><ion-icon name="arrow-back"></ion-icon></button>
+    <button class="icon-button back" *ngIf="view !== 'home' && view !== 'scoring' && view !== 'finished'" (click)="requestHome()" [attr.aria-label]="tr('Volver al inicio')"><ion-icon name="arrow-back"></ion-icon></button>
     <div class="top-placeholder" *ngIf="view === 'home' || view === 'finished'"></div>
     <div class="top-placeholder" *ngIf="view === 'scoring'"></div>
-    <div class="brand"><span class="brand-icon">✦</span> ADIVINA<span class="brand-light">QUIÉN</span></div>
-    <button class="icon-button" *ngIf="view === 'game'" (click)="reroll()" aria-label="Cambiar personaje y reiniciar turno"><ion-icon name="refresh"></ion-icon></button>
-    <button class="icon-button" *ngIf="view === 'scoring'" (click)="closeScoring()" aria-label="Cerrar sin guardar"><ion-icon name="close"></ion-icon></button>
+    <div class="brand"><span class="brand-icon">✦</span> {{tr("ADIVINA")}}<span class="brand-light">{{tr("QUIÉN")}}</span></div>
+    <button class="icon-button" *ngIf="view === 'game'" (click)="reroll()" [attr.aria-label]="tr('Cambiar personaje y reiniciar turno')"><ion-icon name="refresh"></ion-icon></button>
+    <button class="icon-button" *ngIf="view === 'scoring'" (click)="closeScoring()" [attr.aria-label]="tr('Cerrar sin guardar')"><ion-icon name="close"></ion-icon></button>
     <div class="top-placeholder" *ngIf="view !== 'game' && view !== 'scoring'"></div>
    </header>
    <main *ngIf="view==='home'" class="home fade">
     <div class="hero-symbol"><span>?</span><span class="hero-orbit">✦</span></div>
-    <div class="eyebrow">EL JUEGO DE LAS PREGUNTAS</div>
-    <h1>¿QUIÉN<br/><em>SOY?</em></h1>
-    <p class="tagline">{{availableCount}} personajes. {{categoryCount}} {{categoryCount===1 ? 'categoría' : 'categorías'}}.<br/>Infinitas preguntas para adivinar.</p>
+    <div class="eyebrow">{{tr("EL JUEGO DE LAS PREGUNTAS")}}</div>
+    <h1>{{tr("¿QUIÉN")}}<br/><em>{{tr("SOY?")}}</em></h1>
+    <p class="tagline">{{availableCount}} {{tr('personajes')}}. {{categoryCount}} {{categoryCount===1 ? tr('categoría') : tr('categorías')}}.<br/>{{tr("Infinitas preguntas para adivinar.")}}</p>
     <div class="home-actions">
-     <button class="primary-button" (click)="start()" [attr.aria-disabled]="!canStart" [attr.aria-describedby]="!canStart && showStartRequirements ? 'start-requirements' : null"><ion-icon name="play"></ion-icon> NUEVO JUEGO <span class="button-arrow">↗</span></button>
-     <button class="secondary-button" (click)="openSettings()"><ion-icon name="settings-outline"></ion-icon> CONFIGURAR</button>
+     <button class="primary-button" (click)="start()" [attr.aria-disabled]="!canStart" [attr.aria-describedby]="!canStart && showStartRequirements ? 'start-requirements' : null"><ion-icon name="play"></ion-icon> {{tr("NUEVO JUEGO")}} <span class="button-arrow">↗</span></button>
+     <button class="secondary-button" (click)="openSettings()"><ion-icon name="settings-outline"></ion-icon> {{tr("CONFIGURAR")}}</button>
     </div>
     <div class="start-requirements" id="start-requirements" *ngIf="showStartRequirements && !canStart" role="alert">
-     <p *ngIf="playerNames.length<2">Agrega al menos dos jugadores en Configurar.</p>
-     <p *ngIf="!categoryCount">Activa al menos una categoría en Configurar.</p>
-     <p *ngIf="categoryCount && !availableCount">No hay personajes disponibles en las categorías activas.</p>
+     <p *ngIf="playerNames.length<2">{{tr("Agrega al menos dos jugadores en Configurar.")}}</p>
+     <p *ngIf="!categoryCount">{{tr("Activa al menos una categoría en Configurar.")}}</p>
+     <p *ngIf="categoryCount && !availableCount">{{tr("No hay personajes disponibles en las categorías activas.")}}</p>
     </div>
-    <div class="home-stats"><div><strong>{{availableCount}}</strong><small>PERSONAJES</small></div><div class="stat-line"></div><div><strong>{{categoryCount}}</strong><small>CATEGORÍAS ACTIVAS</small></div></div>
+    <div class="home-stats"><div><strong>{{availableCount}}</strong><small>{{tr("PERSONAJES")}}</small></div><div class="stat-line"></div><div><strong>{{categoryCount}}</strong><small>{{tr("CATEGORÍAS ACTIVAS")}}</small></div></div>
     <p class="hint" *ngIf="error">{{error}}</p>
    </main>
    <main *ngIf="view==='game' && current" class="game fade">
-    <div class="game-meta"><span>RONDA {{roundNumber}} DE {{roundCount}}</span><strong class="game-player">{{activePlayer?.name}}</strong><span>TURNO {{playerIndex+1}} DE {{players.length}}</span></div>
+    <div class="game-meta"><span>{{tr("RONDA")}} {{roundNumber}} {{tr("DE")}} {{roundCount}}</span><strong class="game-player">{{activePlayer?.name}}</strong><span>{{tr("TURNO")}} {{playerIndex+1}} {{tr("DE")}} {{players.length}}</span></div>
     <div class="progress"><span [style.width.%]="progress"></span></div>
-    <section class="character-card" [class.has-photo]="current.category==='Actores de Hollywood'" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [class.flipped]="cardFlipped" [class.time-low]="cardFlipped && turnTimerRunning && timeLeft<=10" [style.--accent]="category?.color" [style.--accent-muted]="category?.light" [style.--time-progress]="(timeLeft / turnDuration * 100) + '%'" role="button" tabindex="0" [attr.aria-label]="cardFlipped ? 'Mostrar personaje y pausar tiempo' : (hasTurnStarted ? 'Ocultar personaje y reanudar tiempo' : 'Ocultar personaje e iniciar tiempo')" [attr.aria-pressed]="cardFlipped" (click)="flipCard()" (keydown.enter)="flipCard()" (keydown.space)="$event.preventDefault();flipCard()">
+    <section class="character-card" [class.has-photo]="current.category==='Actores de Hollywood'" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [class.flipped]="cardFlipped" [class.time-low]="cardFlipped && turnTimerRunning && timeLeft<=10" [style.--accent]="category?.color" [style.--accent-muted]="category?.light" [style.--time-progress]="(timeLeft / turnDuration * 100) + '%'" role="button" tabindex="0" [attr.aria-label]="cardFlipped ? tr('Mostrar personaje y pausar tiempo') : (hasTurnStarted ? tr('Ocultar personaje y reanudar tiempo') : tr('Ocultar personaje e iniciar tiempo'))" [attr.aria-pressed]="cardFlipped" (click)="flipCard()" (keydown.enter)="flipCard()" (keydown.space)="$event.preventDefault();flipCard()">
      <div class="card-rotator">
       <div class="card-face card-front" [attr.aria-hidden]="cardFlipped">
-       <img *ngIf="current.category==='Actores de Hollywood'" class="character-photo" [src]="'assets/photos/'+current.id+'.jpg'" [alt]="'Retrato de '+current.name" decoding="async" />
-       <div class="card-top"><div class="flag-pill card-panel" [attr.aria-label]="countryLabel"><span class="flag">{{flag}}</span><span class="country">{{countryLabel}}</span></div><div class="character-meta card-panel" [attr.aria-label]="characterAge !== null ? (current.isAlive ? characterAge + ' años, vivo' : 'Murió a los ' + characterAge + ' años') : (current.isAlive ? 'vivo' : 'fallecido')"><span *ngIf="characterAge !== null">{{characterAge}} años</span><span aria-hidden="true">{{current.isAlive ? '❤️' : '💀'}}</span></div></div>
+       <img *ngIf="current.category==='Actores de Hollywood'" class="character-photo" [src]="'assets/photos/'+current.id+'.jpg'" [alt]="tr('Retrato de')+' '+current.name" decoding="async" />
+       <div class="card-top"><div class="flag-pill card-panel" [attr.aria-label]="countryLabel"><span class="flag">{{flag}}</span><span class="country">{{countryLabel}}</span></div><div class="character-meta card-panel" [attr.aria-label]="characterAge !== null ? (current.isAlive ? characterAge + ' ' + tr('años') + ', ' + tr('vivo') : tr('Murió a los') + ' ' + characterAge + ' ' + tr('años')) : (current.isAlive ? tr('vivo') : tr('fallecido'))"><span *ngIf="characterAge !== null">{{characterAge}} {{tr('años')}}</span><span aria-hidden="true">{{current.isAlive ? '❤️' : '💀'}}</span></div></div>
        <div class="card-center"><h2>{{current.name}}</h2></div>
-       <div class="card-bottom"><span class="category-pill card-panel">{{category?.icon}} {{current.category}}</span><span class="card-timer card-panel" [class.time-low]="timeLeft<=10" [attr.aria-label]="'Tiempo restante: '+formattedTime">{{formattedTime}}</span></div>
+       <div class="card-bottom"><span class="category-pill card-panel">{{category?.icon}} {{tr(current.category)}}</span><span class="card-timer card-panel" [class.time-low]="timeLeft<=10" [attr.aria-label]="tr('Tiempo restante:')+' '+formattedTime">{{formattedTime}}</span></div>
       </div>
-      <div class="card-face card-back" [attr.aria-hidden]="!cardFlipped"><span class="card-timer card-panel card-back-timer" [class.time-low]="timeLeft<=10" [attr.aria-label]="'Tiempo restante: '+formattedTime">{{formattedTime}}</span></div>
+      <div class="card-face card-back" [attr.aria-hidden]="!cardFlipped"><span class="card-timer card-panel card-back-timer" [class.time-low]="timeLeft<=10" [attr.aria-label]="tr('Tiempo restante:')+' '+formattedTime">{{formattedTime}}</span></div>
      </div>
     </section>
     <div *ngIf="cardFlipped" class="game-actions">
-     <button class="primary-button score-button" (click)="openScoring()">PUNTUAR</button>
-     <button type="button" class="pause-button" (click)="toggleTurnTimer()" [attr.aria-label]="turnTimerRunning ? 'Pausar tiempo' : 'Continuar tiempo'"><ion-icon [name]="turnTimerRunning ? 'pause' : 'play'" aria-hidden="true"></ion-icon></button>
+     <button class="primary-button score-button" (click)="openScoring()">{{tr("PUNTUAR")}}</button>
+     <button type="button" class="pause-button" (click)="toggleTurnTimer()" [attr.aria-label]="turnTimerRunning ? tr('Pausar tiempo') : tr('Continuar tiempo')"><ion-icon [name]="turnTimerRunning ? 'pause' : 'play'" aria-hidden="true"></ion-icon></button>
     </div>
    </main>
    <main *ngIf="view==='timeout' && current" class="timeout-screen fade">
-    <div class="section-kicker">TIEMPO AGOTADO</div>
-    <h1>¡Qué <em>lástima!</em></h1>
-    <p>No lograste adivinar el personaje.</p>
-    <section class="character-card timeout-character-card" [class.has-photo]="current.category==='Actores de Hollywood'" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [style.--accent]="category?.color" [style.--accent-muted]="category?.light" [attr.aria-label]="'El personaje era '+current.name">
+    <div class="section-kicker">{{tr("TIEMPO AGOTADO")}}</div>
+    <h1>{{tr("¡Qué")}} <em>{{tr("lástima!")}}</em></h1>
+    <p>{{tr("No lograste adivinar el personaje.")}}</p>
+    <section class="character-card timeout-character-card" [class.has-photo]="current.category==='Actores de Hollywood'" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [style.--accent]="category?.color" [style.--accent-muted]="category?.light" [attr.aria-label]="tr('El personaje era')+' '+current.name">
      <div class="card-face card-front">
-      <img *ngIf="current.category==='Actores de Hollywood'" class="character-photo" [src]="'assets/photos/'+current.id+'.jpg'" [alt]="'Retrato de '+current.name" decoding="async" />
+      <img *ngIf="current.category==='Actores de Hollywood'" class="character-photo" [src]="'assets/photos/'+current.id+'.jpg'" [alt]="tr('Retrato de')+' '+current.name" decoding="async" />
       <div class="card-top"><div class="flag-pill card-panel"><span class="flag">{{flag}}</span><span class="country">{{countryLabel}}</span></div></div>
       <div class="card-center"><h2>{{current.name}}</h2></div>
-      <div class="card-bottom"><span class="category-pill card-panel">{{category?.icon}} {{current.category}}</span></div>
+      <div class="card-bottom"><span class="category-pill card-panel">{{category?.icon}} {{tr(current.category)}}</span></div>
      </div>
     </section>
-    <button class="primary-button timeout-continue" (click)="continueAfterTimeout()">CONTINUAR</button>
+    <button class="primary-button timeout-continue" (click)="continueAfterTimeout()">{{tr("CONTINUAR")}}</button>
    </main>
    <main *ngIf="view==='scoring'" class="scoring fade">
     <div class="between-symbol" aria-hidden="true">★</div>
-    <div class="section-kicker">{{correctingExpiredTurn ? '¡ACIERTO DE ' : 'TURNO DE '}}{{scoringPlayer?.name}}{{correctingExpiredTurn ? '!' : ''}}</div>
-    <h1>{{correctingExpiredTurn ? '¿CÓMO FUE' : 'PUNTUAR'}}<br/><em>{{correctingExpiredTurn ? 'EL ACIERTO?' : 'EL TURNO'}}</em></h1>
-    <p>{{correctingExpiredTurn ? 'Elige una opción para sumar los puntos de este turno.' : 'Elige los puntos del acierto o marca la respuesta incorrecta.'}}</p>
+    <div class="section-kicker">{{correctingExpiredTurn ? tr('¡ACIERTO DE ') : tr('TURNO DE ')}}{{scoringPlayer?.name}}{{correctingExpiredTurn ? '!' : ''}}</div>
+    <h1>{{correctingExpiredTurn ? tr('¿CÓMO FUE') : tr('PUNTUAR')}}<br/><em>{{correctingExpiredTurn ? tr('EL ACIERTO?') : tr('EL TURNO')}}</em></h1>
+    <p>{{correctingExpiredTurn ? tr('Elige una opción para sumar los puntos de este turno.') : tr('Elige los puntos del acierto o marca la respuesta incorrecta.')}}</p>
     <div class="score-options">
-     <button (click)="scoreCorrect(baseScore+bonusScore)">ANTES DE {{bonusQuestions}} PREGUNTAS <strong>+{{baseScore+bonusScore}} puntos</strong></button>
-     <button (click)="scoreCorrect(baseScore)">PUNTAJE BASE <strong>+{{baseScore}} puntos</strong></button>
-     <button (click)="scoreCorrect(baseScore+cluePenalty)">CON PISTA <strong>{{signedScore(baseScore+cluePenalty)}} puntos</strong></button>
+     <button (click)="scoreCorrect(baseScore+bonusScore)">{{tr("ANTES DE")}} {{bonusQuestions}} {{tr("PREGUNTAS")}} <strong>+{{baseScore+bonusScore}} {{tr("puntos")}}</strong></button>
+     <button (click)="scoreCorrect(baseScore)">{{tr("PUNTAJE BASE")}} <strong>+{{baseScore}} {{tr("puntos")}}</strong></button>
+     <button (click)="scoreCorrect(baseScore+cluePenalty)">{{tr("CON PISTA")}} <strong>{{signedScore(baseScore+cluePenalty)}} {{tr("puntos")}}</strong></button>
     </div>
-    <button class="score-incorrect" *ngIf="!correctingExpiredTurn" (click)="scoreIncorrect()"><ion-icon name="close-circle" aria-hidden="true"></ion-icon> MARCAR COMO INCORRECTO</button>
+    <button class="score-incorrect" *ngIf="!correctingExpiredTurn" (click)="scoreIncorrect()"><ion-icon name="close-circle" aria-hidden="true"></ion-icon> {{tr("MARCAR COMO INCORRECTO")}}</button>
    </main>
    <main *ngIf="view==='between'" class="between fade">
     <div class="between-symbol" aria-hidden="true">?</div>
-    <div class="section-kicker">RONDA {{roundNumber}} DE {{roundCount}}</div>
-    <h1>TURNO DE<br/><em>{{activePlayer?.name}}</em></h1>
-    <div class="between-stats" aria-label="Resumen del jugador">
-     <div><ion-icon name="checkmark-circle" aria-hidden="true"></ion-icon><strong>{{activePlayer?.correct}}</strong><small>CORRECTAS</small></div>
-     <div><ion-icon name="close-circle" aria-hidden="true"></ion-icon><strong>{{activePlayer?.errors}}</strong><small>INCORRECTAS</small></div>
-     <div><ion-icon name="trophy-outline" aria-hidden="true"></ion-icon><strong>{{activePlayer?.score}}</strong><small>PUNTOS</small></div>
+    <div class="section-kicker">{{tr("RONDA")}} {{roundNumber}} {{tr("DE")}} {{roundCount}}</div>
+    <h1>{{tr("TURNO DE")}}<br/><em>{{activePlayer?.name}}</em></h1>
+    <div class="between-stats" [attr.aria-label]="tr('Resumen del jugador')">
+     <div><ion-icon name="checkmark-circle" aria-hidden="true"></ion-icon><strong>{{activePlayer?.correct}}</strong><small>{{tr("CORRECTAS")}}</small></div>
+     <div><ion-icon name="close-circle" aria-hidden="true"></ion-icon><strong>{{activePlayer?.errors}}</strong><small>{{tr("INCORRECTAS")}}</small></div>
+     <div><ion-icon name="trophy-outline" aria-hidden="true"></ion-icon><strong>{{activePlayer?.score}}</strong><small>{{tr("PUNTOS")}}</small></div>
     </div>
-    <div *ngIf="roundNumber>1 && activePlayer" class="current-standing" aria-live="polite"><span>PUESTO HASTA AHORA</span><strong>{{activePlayerRank}}° lugar <small>de {{players.length}}</small></strong></div>
-    <p>El personaje está oculto. Pasa el dispositivo a {{activePlayer?.name}} y presiona Iniciar cuando esté listo.</p>
+    <div *ngIf="roundNumber>1 && activePlayer" class="current-standing" aria-live="polite"><span>{{tr("PUESTO HASTA AHORA")}}</span><strong>{{activePlayerRank}}° {{tr('lugar')}} <small>{{tr("de")}} {{players.length}}</small></strong></div>
+    <p>{{tr("El personaje está oculto. Pasa el dispositivo a")}} {{activePlayer?.name}} {{tr("y presiona Iniciar cuando esté listo.")}}</p>
     <button class="primary-button" (click)="beginReveal()" [disabled]="countdown > 0">
      <ion-icon name="play" *ngIf="countdown === 0" aria-hidden="true"></ion-icon>
-     <span>{{countdown > 0 ? 'CONTINUANDO EN ' + countdown + '…' : 'INICIAR'}}</span>
+     <span>{{countdown > 0 ? tr('CONTINUANDO EN ') + countdown + '…' : tr('INICIAR')}}</span>
     </button>
-    <button *ngIf="expiredPlayer && countdown === 0" class="late-correct-button" (click)="correctExpiredTurn()">{{expiredPlayer.name}} acertó al final · MARCAR CORRECTA</button>
+    <button *ngIf="expiredPlayer && countdown === 0" class="late-correct-button" (click)="correctExpiredTurn()">{{expiredPlayer.name}} {{tr("acertó al final · MARCAR CORRECTA")}}</button>
    </main>
    <main *ngIf="view==='roundResult'" class="round-result fade">
-    <div class="finish-icon">🏆</div><div class="section-kicker">RONDA {{roundNumber}} COMPLETADA</div>
-    <h1>{{roundWinners.length===1 ? 'GANADOR DE LA RONDA' : 'EMPATE EN LA RONDA'}}</h1>
-    <div class="winner-names">{{roundWinnerNames}} · {{roundWinners[0].roundScore}} puntos</div>
-    <div class="leaderboard"><div *ngFor="let player of players"><strong>{{player.name}}</strong><span>+{{player.roundScore}} esta ronda · {{player.score}} puntos · {{player.errors}} errores</span></div></div>
-    <button *ngIf="expiredPlayer" class="late-correct-button" (click)="correctExpiredTurn()">{{expiredPlayer.name}} acertó al final · MARCAR CORRECTA</button>
-    <button class="primary-button" (click)="nextRound()"><span>{{roundNumber===roundCount ? 'VER RESULTADOS FINALES' : 'SIGUIENTE RONDA'}}</span><span class="button-arrow" aria-hidden="true">↗</span></button>
+    <div class="finish-icon">🏆</div><div class="section-kicker">{{tr("RONDA")}} {{roundNumber}} {{tr("COMPLETADA")}}</div>
+    <h1>{{roundWinners.length===1 ? tr('GANADOR DE LA RONDA') : tr('EMPATE EN LA RONDA')}}</h1>
+    <div class="winner-names">{{roundWinnerNames}} · {{roundWinners[0].roundScore}} {{tr("puntos")}}</div>
+    <div class="leaderboard"><div *ngFor="let player of players"><strong>{{player.name}}</strong><span>+{{player.roundScore}} {{tr('esta ronda')}} · {{player.score}} {{tr('puntos')}} · {{player.errors}} {{tr("errores")}}</span></div></div>
+    <button *ngIf="expiredPlayer" class="late-correct-button" (click)="correctExpiredTurn()">{{expiredPlayer.name}} {{tr("acertó al final · MARCAR CORRECTA")}}</button>
+    <button class="primary-button" (click)="nextRound()"><span>{{roundNumber===roundCount ? tr('VER RESULTADOS FINALES') : tr('SIGUIENTE RONDA')}}</span><span class="button-arrow" aria-hidden="true">↗</span></button>
    </main>
-   <main *ngIf="view==='settings'" class="settings fade"><div class="section-kicker">PERSONALIZA TU PARTIDA</div><h1>Configurar<br/><em>la partida</em></h1><p>Elige las reglas, los jugadores y las categorías antes de empezar.</p>
-    <nav class="settings-tabs" aria-label="Secciones de configuración">
-     <button type="button" (click)="settingsTab='general'" [class.active]="settingsTab==='general'" [attr.aria-pressed]="settingsTab==='general'">GENERAL</button>
-     <button type="button" (click)="settingsTab='players'" [class.active]="settingsTab==='players'" [attr.aria-pressed]="settingsTab==='players'">JUGADORES</button>
-     <button type="button" (click)="settingsTab='categories'" [class.active]="settingsTab==='categories'" [attr.aria-pressed]="settingsTab==='categories'">CATEGORÍAS</button>
-     <button type="button" (click)="settingsTab='visual'" [class.active]="settingsTab==='visual'" [attr.aria-pressed]="settingsTab==='visual'">VISUAL</button>
+   <main *ngIf="view==='settings'" class="settings fade"><div class="section-kicker">{{tr("PERSONALIZA TU PARTIDA")}}</div><h1>{{tr("Configurar")}}<br/><em>{{tr("la partida")}}</em></h1><p>{{tr("Elige las reglas, los jugadores y las categorías antes de empezar.")}}</p>
+    <nav class="settings-tabs" [attr.aria-label]="tr('Secciones de configuración')">
+     <button type="button" (click)="settingsTab='general'" [class.active]="settingsTab==='general'" [attr.aria-pressed]="settingsTab==='general'">{{tr("GENERAL")}}</button>
+     <button type="button" (click)="settingsTab='players'" [class.active]="settingsTab==='players'" [attr.aria-pressed]="settingsTab==='players'">{{tr("JUGADORES")}}</button>
+     <button type="button" (click)="settingsTab='categories'" [class.active]="settingsTab==='categories'" [attr.aria-pressed]="settingsTab==='categories'">{{tr("CATEGORÍAS")}}</button>
+     <button type="button" (click)="settingsTab='others'" [class.active]="settingsTab==='others'" [attr.aria-pressed]="settingsTab==='others'">{{tr('OTROS')}}</button>
     </nav>
     <div class="settings-tab-panel" [hidden]="settingsTab!=='general'">
-     <section class="settings-section"><h2>Rondas</h2><p>Cada jugador participa una vez por ronda.</p><div class="option-grid"><button *ngFor="let option of roundOptions" (click)="setRounds(option)" [class.selected]="roundCount===option">{{option}}</button></div></section>
-     <section class="settings-section"><h2>Espera antes de revelar</h2><p>Cuenta regresiva antes de mostrar el personaje de cada turno.</p><div class="option-grid"><button *ngFor="let option of revealDelayOptions" (click)="setRevealDelay(option)" [class.selected]="revealDelay===option">{{option}} seg</button></div></section>
-     <section class="settings-section"><h2>Tiempo para adivinar</h2><div class="option-grid"><button *ngFor="let option of timeOptions" (click)="setDuration(option)" [class.selected]="turnDuration===option">{{timeLabel(option)}}</button></div></section>
-     <section class="settings-section score-settings"><h2>Puntajes</h2><p>Configura los puntos y revisa cómo se aplican al puntuar.</p>
-      <div class="score-setting"><h3>Puntaje base</h3><p>Puntos por adivinar dentro del tiempo.</p><div class="option-grid score-setting-options" role="group" aria-label="Puntaje base"><button type="button" *ngFor="let option of baseScoreOptions" (click)="setBaseScore(option)" [class.selected]="baseScore===option" [attr.aria-pressed]="baseScore===option">{{option}}</button></div></div>
-      <div class="score-setting"><h3>Bonificación preguntas</h3><p>Preguntas máximas para obtener la bonificación.</p><div class="option-grid score-setting-options" role="group" aria-label="Bonificación preguntas"><button type="button" *ngFor="let option of bonusQuestionOptions" (click)="setBonusQuestions(option)" [class.selected]="bonusQuestions===option" [attr.aria-pressed]="bonusQuestions===option">{{option}}</button></div></div>
-      <div class="score-setting"><h3>Puntaje bonificación</h3><p>Puntos extra por adivinar dentro del límite de preguntas.</p><div class="option-grid score-setting-options" role="group" aria-label="Puntaje bonificación"><button type="button" *ngFor="let option of bonusScoreOptions" (click)="setBonusScore(option)" [class.selected]="bonusScore===option" [attr.aria-pressed]="bonusScore===option">+{{option}}</button></div></div>
-      <div class="score-setting"><h3>Puntaje al dar pista</h3><p>Ajuste aplicado al puntaje base cuando se usa una pista.</p><div class="option-grid score-setting-options" role="group" aria-label="Puntaje al dar pista"><button type="button" *ngFor="let option of cluePenaltyOptions" (click)="setCluePenalty(option)" [class.selected]="cluePenalty===option" [attr.aria-pressed]="cluePenalty===option">{{option===0 ? '-0' : option}}</button></div></div>
-      <div class="score-preview" aria-live="polite" aria-label="Vista previa de puntajes"><strong>Vista previa</strong><div><span>Puntaje base</span><b>+{{baseScore}} puntos</b></div><div><span>Bonificación</span><b>+{{baseScore+bonusScore}} puntos</b></div><div><span>Con pista</span><b>{{signedScore(baseScore+cluePenalty)}} puntos</b></div></div>
+     <section class="settings-section"><h2>{{tr("Rondas")}}</h2><p>{{tr("Cada jugador participa una vez por ronda.")}}</p><div class="option-grid"><button *ngFor="let option of roundOptions" (click)="setRounds(option)" [class.selected]="roundCount===option">{{option}}</button></div></section>
+     <section class="settings-section"><h2>{{tr("Espera antes de revelar")}}</h2><p>{{tr("Cuenta regresiva antes de mostrar el personaje de cada turno.")}}</p><div class="option-grid"><button *ngFor="let option of revealDelayOptions" (click)="setRevealDelay(option)" [class.selected]="revealDelay===option">{{option}} {{tr("seg")}}</button></div></section>
+     <section class="settings-section"><h2>{{tr("Tiempo para adivinar")}}</h2><div class="option-grid"><button *ngFor="let option of timeOptions" (click)="setDuration(option)" [class.selected]="turnDuration===option">{{timeLabel(option)}}</button></div></section>
+     <section class="settings-section score-settings"><h2>{{tr("Puntajes")}}</h2><p>{{tr("Configura los puntos y revisa cómo se aplican al puntuar.")}}</p>
+      <div class="score-setting"><h3>{{tr("Puntaje base")}}</h3><p>{{tr("Puntos por adivinar dentro del tiempo.")}}</p><div class="option-grid score-setting-options" role="group" [attr.aria-label]="tr('Puntaje base')"><button type="button" *ngFor="let option of baseScoreOptions" (click)="setBaseScore(option)" [class.selected]="baseScore===option" [attr.aria-pressed]="baseScore===option">{{option}}</button></div></div>
+      <div class="score-setting"><h3>{{tr("Bonificación preguntas")}}</h3><p>{{tr("Preguntas máximas para obtener la bonificación.")}}</p><div class="option-grid score-setting-options" role="group" [attr.aria-label]="tr('Bonificación preguntas')"><button type="button" *ngFor="let option of bonusQuestionOptions" (click)="setBonusQuestions(option)" [class.selected]="bonusQuestions===option" [attr.aria-pressed]="bonusQuestions===option">{{option}}</button></div></div>
+      <div class="score-setting"><h3>{{tr("Puntaje bonificación")}}</h3><p>{{tr("Puntos extra por adivinar dentro del límite de preguntas.")}}</p><div class="option-grid score-setting-options" role="group" [attr.aria-label]="tr('Puntaje bonificación')"><button type="button" *ngFor="let option of bonusScoreOptions" (click)="setBonusScore(option)" [class.selected]="bonusScore===option" [attr.aria-pressed]="bonusScore===option">+{{option}}</button></div></div>
+      <div class="score-setting"><h3>{{tr("Puntaje al dar pista")}}</h3><p>{{tr("Ajuste aplicado al puntaje base cuando se usa una pista.")}}</p><div class="option-grid score-setting-options" role="group" [attr.aria-label]="tr('Puntaje al dar pista')"><button type="button" *ngFor="let option of cluePenaltyOptions" (click)="setCluePenalty(option)" [class.selected]="cluePenalty===option" [attr.aria-pressed]="cluePenalty===option">{{option===0 ? '-0' : option}}</button></div></div>
+      <div class="score-preview" aria-live="polite" [attr.aria-label]="tr('Vista previa de puntajes')"><strong>{{tr("Vista previa")}}</strong><div><span>{{tr("Puntaje base")}}</span><b>+{{baseScore}} {{tr("puntos")}}</b></div><div><span>{{tr("Bonificación")}}</span><b>+{{baseScore+bonusScore}} {{tr("puntos")}}</b></div><div><span>{{tr("Con pista")}}</span><b>{{signedScore(baseScore+cluePenalty)}} {{tr("puntos")}}</b></div></div>
      </section>
     </div>
-    <div class="settings-tab-panel" [hidden]="settingsTab!=='visual'">
-     <section class="settings-section"><h2>Sonido</h2><p>Activa o silencia los efectos de audio del juego.</p><div class="category-row"><div class="category-copy"><strong>{{soundEnabled ? 'Sonido activado' : 'Sonido desactivado'}}</strong><small>Alertas y efectos del juego</small></div><ion-toggle [checked]="soundEnabled" (ionChange)="setSoundEnabled($event.detail.checked)" aria-label="Activar sonido"></ion-toggle></div></section>
-     <section class="settings-section"><h2>Vibración</h2><p>Activa o desactiva los avisos hápticos del temporizador.</p><div class="category-row"><div class="category-copy"><strong>{{vibrationEnabled ? 'Vibración activada' : 'Vibración desactivada'}}</strong><small>Avisos al llegar a la mitad y a 15 segundos</small></div><ion-toggle [checked]="vibrationEnabled" [disabled]="vibrationUnavailable" (ionChange)="setVibrationEnabled($event.detail.checked)" aria-label="Activar vibración"></ion-toggle></div><p class="capability-note" *ngIf="vibrationUnavailable">Este dispositivo no permite vibrar. Para vibración en iPhone, abre la app instalada.</p></section>
-     <section class="settings-section"><h2>Tamaño del nombre</h2><p>Solo cambia el nombre en la carta de personaje.</p><div class="option-grid name-size-options" role="group" aria-label="Tamaño del nombre del personaje"><button type="button" *ngFor="let option of characterNameSizeOptions" (click)="setCharacterNameSize(option.id)" [class.selected]="characterNameSize===option.id" [attr.aria-pressed]="characterNameSize===option.id"><span>{{option.label}}</span><small>{{option.size}} px</small></button></div><div class="score-preview name-size-preview" aria-live="polite" aria-label="Vista previa del tamaño del nombre"><strong>Vista previa · {{characterNameSize==='normal' ? 36 : characterNameSize==='large' ? 52 : 68}} px</strong><div class="name-size-preview-row"><span [style.font-size.px]="characterNameSize==='normal' ? 36 : characterNameSize==='large' ? 52 : 68">Tu personaje</span></div></div></section>
-     <section class="settings-section"><h2>Color de acento</h2><p>Elige el color principal de la aplicación.</p><div class="accent-options" role="group" aria-label="Color de acento"><button type="button" *ngFor="let option of accentOptions" class="accent-choice" [class.selected]="accentId===option.id" [style.--choice-color]="option.color" [attr.aria-pressed]="accentId===option.id" (click)="setAccent(option.id)"><span class="accent-swatch" aria-hidden="true"></span><span>{{option.label}}</span></button></div></section>
+    <div class="settings-tab-panel" [hidden]="settingsTab!=='others'">
+     <section class="settings-section"><h2>{{tr('Idioma')}}</h2><p>{{tr('Elige el idioma de la aplicación.')}}</p><div class="option-grid" role="group" [attr.aria-label]="tr('Idioma')"><button type="button" (click)="setLanguage('es')" [class.selected]="language==='es'" [attr.aria-pressed]="language==='es'">Español</button><button type="button" (click)="setLanguage('en')" [class.selected]="language==='en'" [attr.aria-pressed]="language==='en'">English</button></div></section>
+     <section class="settings-section"><h2>{{tr("Sonido")}}</h2><p>{{tr("Activa o silencia los efectos de audio del juego.")}}</p><div class="category-row"><div class="category-copy"><strong>{{soundEnabled ? tr('Sonido activado') : tr('Sonido desactivado')}}</strong><small>{{tr("Alertas y efectos del juego")}}</small></div><ion-toggle [checked]="soundEnabled" (ionChange)="setSoundEnabled($event.detail.checked)" [attr.aria-label]="tr('Activar sonido')"></ion-toggle></div></section>
+     <section class="settings-section"><h2>{{tr("Vibración")}}</h2><p>{{tr("Activa o desactiva los avisos hápticos del temporizador.")}}</p><div class="category-row"><div class="category-copy"><strong>{{vibrationEnabled ? tr('Vibración activada') : tr('Vibración desactivada')}}</strong><small>{{tr("Avisos al llegar a la mitad y a 15 segundos")}}</small></div><ion-toggle [checked]="vibrationEnabled" [disabled]="vibrationUnavailable" (ionChange)="setVibrationEnabled($event.detail.checked)" [attr.aria-label]="tr('Activar vibración')"></ion-toggle></div><p class="capability-note" *ngIf="vibrationUnavailable">{{tr("Este dispositivo no permite vibrar. Para vibración en iPhone, abre la app instalada.")}}</p></section>
+     <section class="settings-section"><h2>{{tr("Tamaño del nombre")}}</h2><p>{{tr("Solo cambia el nombre en la carta de personaje.")}}</p><div class="option-grid name-size-options" role="group" [attr.aria-label]="tr('Tamaño del nombre del personaje')"><button type="button" *ngFor="let option of characterNameSizeOptions" (click)="setCharacterNameSize(option.id)" [class.selected]="characterNameSize===option.id" [attr.aria-pressed]="characterNameSize===option.id"><span>{{tr(option.label)}}</span><small>{{option.size}} px</small></button></div><div class="score-preview name-size-preview" aria-live="polite" [attr.aria-label]="tr('Vista previa del tamaño del nombre')"><strong>{{tr('Vista previa')}} · {{characterNameSize==='normal' ? 36 : characterNameSize==='large' ? 52 : 68}} px</strong><div class="name-size-preview-row"><span [style.font-size.px]="characterNameSize==='normal' ? 36 : characterNameSize==='large' ? 52 : 68">{{tr("Tu personaje")}}</span></div></div></section>
+     <section class="settings-section"><h2>{{tr("Color de acento")}}</h2><p>{{tr("Elige el color principal de la aplicación.")}}</p><div class="accent-options" role="group" [attr.aria-label]="tr('Color de acento')"><button type="button" *ngFor="let option of accentOptions" class="accent-choice" [class.selected]="accentId===option.id" [style.--choice-color]="option.color" [attr.aria-pressed]="accentId===option.id" (click)="setAccent(option.id)"><span class="accent-swatch" aria-hidden="true"></span><span>{{tr(option.label)}}</span></button></div></section>
     </div>
     <div class="settings-tab-panel" [hidden]="settingsTab!=='players'">
-     <section class="settings-section"><h2>Jugadores</h2><p>El orden de esta lista será el orden de los turnos.</p>
-      <form class="add-player" (ngSubmit)="addPlayer()"><input name="playerName" [(ngModel)]="newPlayerName" maxlength="30" placeholder="Nombre del jugador" aria-label="Nombre del jugador"/><button type="submit">AGREGAR</button></form>
-      <div class="player-list"><div class="player-row" *ngFor="let name of playerNames;let i=index"><span class="player-position">{{i+1}}</span><strong>{{name}}</strong><button (click)="movePlayer(i,-1)" [disabled]="i===0" [attr.aria-label]="'Subir a '+name">↑</button><button (click)="movePlayer(i,1)" [disabled]="i===playerNames.length-1" [attr.aria-label]="'Bajar a '+name">↓</button><button (click)="removePlayer(i)" [attr.aria-label]="'Quitar a '+name">×</button></div></div>
+     <section class="settings-section"><h2>{{tr("Jugadores")}}</h2><p>{{tr("El orden de esta lista será el orden de los turnos.")}}</p>
+      <form class="add-player" (ngSubmit)="addPlayer()"><input name="playerName" [(ngModel)]="newPlayerName" maxlength="30" [attr.placeholder]="tr('Nombre del jugador')" [attr.aria-label]="tr('Nombre del jugador')"/><button type="submit">{{tr("AGREGAR")}}</button></form>
+      <div class="player-list"><div class="player-row" *ngFor="let name of playerNames;let i=index"><span class="player-position">{{i+1}}</span><strong>{{name}}</strong><button (click)="movePlayer(i,-1)" [disabled]="i===0" [attr.aria-label]="tr('Subir a')+' '+name">↑</button><button (click)="movePlayer(i,1)" [disabled]="i===playerNames.length-1" [attr.aria-label]="tr('Bajar a')+' '+name">↓</button><button (click)="removePlayer(i)" [attr.aria-label]="tr('Quitar a')+' '+name">×</button></div></div>
      </section>
     </div>
     <div class="settings-tab-panel" [hidden]="settingsTab!=='categories'">
-     <section class="settings-section"><h2>Categorías</h2><p>Elige qué personajes pueden aparecer durante el juego.</p>
-      <div class="settings-head"><strong>{{categoryCount}} de {{categories.length}} activas</strong><div class="category-actions"><button type="button" (click)="selectAll()" [disabled]="categoryCount===categories.length">Seleccionar todas</button><button type="button" (click)="deselectAll()" [disabled]="categoryCount===0">Deseleccionar todas</button></div></div>
-      <div class="category-list"><div class="category-row" *ngFor="let cat of categories"><span class="category-emoji" [style.background]="cat.light">{{cat.icon}}</span><div class="category-copy"><strong>{{cat.name}}</strong><small>50 personajes</small></div><ion-toggle [checked]="isEnabled(cat.name)" (ionChange)="toggle(cat.name,$event.detail.checked)" [attr.aria-label]="cat.name"></ion-toggle></div></div>
+     <section class="settings-section"><h2>{{tr("Categorías")}}</h2><p>{{tr("Elige qué personajes pueden aparecer durante el juego.")}}</p>
+      <div class="settings-head"><strong>{{categoryCount}} {{tr("de")}} {{categories.length}} {{tr("activas")}}</strong><div class="category-actions"><button type="button" (click)="selectAll()" [disabled]="categoryCount===categories.length">{{tr("Seleccionar todas")}}</button><button type="button" (click)="deselectAll()" [disabled]="categoryCount===0">{{tr("Deseleccionar todas")}}</button></div></div>
+      <div class="category-list"><div class="category-row" *ngFor="let cat of categories"><span class="category-emoji" [style.background]="cat.light">{{cat.icon}}</span><div class="category-copy"><strong>{{tr(cat.name)}}</strong><small>{{tr("50 personajes")}}</small></div><ion-toggle [checked]="isEnabled(cat.name)" (ionChange)="toggle(cat.name,$event.detail.checked)" [attr.aria-label]="tr(cat.name)"></ion-toggle></div></div>
      </section>
     </div>
    </main>
    <main *ngIf="view==='finished'" class="finished final-screen fade">
     <div class="confetti" aria-hidden="true"><span *ngFor="let piece of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]"></span></div>
     <div class="finish-icon" aria-hidden="true">🏆</div>
-    <div class="section-kicker">¡PARTIDA COMPLETADA!</div>
-    <div class="final-winner-label">{{finalWinners.length===1 ? 'GANADOR' : 'EMPATE'}}</div>
+    <div class="section-kicker">{{tr("¡PARTIDA COMPLETADA!")}}</div>
+    <div class="final-winner-label">{{finalWinners.length===1 ? tr('GANADOR') : tr('EMPATE')}}</div>
     <h1 class="final-winner-name">{{finalWinnerNames}}</h1>
-    <p class="final-congrats">¡BIEN JUGADO!</p>
-    <button type="button" class="secondary-button ranking-toggle" (click)="showFinalRanking=!showFinalRanking" [attr.aria-expanded]="showFinalRanking"><span>{{showFinalRanking ? 'OCULTAR CLASIFICACIÓN' : 'VER CLASIFICACIÓN'}}</span><span aria-hidden="true">{{showFinalRanking ? '−' : '+'}}</span></button>
+    <p class="final-congrats">{{tr("¡BIEN JUGADO!")}}</p>
+    <button type="button" class="secondary-button ranking-toggle" (click)="showFinalRanking=!showFinalRanking" [attr.aria-expanded]="showFinalRanking"><span>{{showFinalRanking ? tr('OCULTAR CLASIFICACIÓN') : tr('VER CLASIFICACIÓN')}}</span><span aria-hidden="true">{{showFinalRanking ? '−' : '+'}}</span></button>
     <div *ngIf="showFinalRanking" class="leaderboard final-leaderboard">
      <div *ngFor="let player of rankedPlayers;let i=index" class="final-rank-row">
       <strong><span class="rank-position">{{i+1}}.</span><span *ngIf="i<3" class="rank-medal" aria-hidden="true">{{i===0 ? '🥇' : i===1 ? '🥈' : '🥉'}}</span>{{player.name}}</strong>
-      <span>{{player.score}} puntos · {{player.errors}} errores</span>
+      <span>{{player.score}} {{tr('puntos')}} · {{player.errors}} {{tr("errores")}}</span>
      </div>
     </div>
-    <button class="primary-button" (click)="start()" [disabled]="!canStart"><span>JUGAR DE NUEVO</span><span class="button-arrow" aria-hidden="true">↗</span></button>
-    <button class="secondary-button" (click)="requestHome()">VOLVER AL INICIO</button>
+    <button class="primary-button" (click)="start()" [disabled]="!canStart"><span>{{tr("JUGAR DE NUEVO")}}</span><span class="button-arrow" aria-hidden="true">↗</span></button>
+    <button class="secondary-button" (click)="requestHome()">{{tr("VOLVER AL INICIO")}}</button>
    </main>
   </ng-container>
  </div>
 </ion-content>
 <dialog #rerollDialog class="reroll-dialog" aria-labelledby="reroll-title" aria-describedby="reroll-description" (cancel)="$event.preventDefault();cancelReroll()">
  <div class="reroll-dialog-icon" aria-hidden="true"><ion-icon name="refresh"></ion-icon></div>
- <h2 id="reroll-title">¿Cambiar personaje?</h2>
- <p id="reroll-description">Se reiniciará el turno de <strong>{{activePlayer?.name}}</strong> con otro personaje y el tiempo completo.</p>
+ <h2 id="reroll-title">{{tr("¿Cambiar personaje?")}}</h2>
+ <p id="reroll-description">{{tr("Se reiniciará el turno de")}} <strong>{{activePlayer?.name}}</strong> {{tr("con otro personaje y el tiempo completo.")}}</p>
  <div class="reroll-dialog-actions">
-  <button type="button" class="secondary-button" (click)="cancelReroll()">CANCELAR</button>
-  <button type="button" class="primary-button" (click)="confirmReroll()">CAMBIAR PERSONAJE</button>
+  <button type="button" class="secondary-button" (click)="cancelReroll()">{{tr("CANCELAR")}}</button>
+  <button type="button" class="primary-button" (click)="confirmReroll()">{{tr("CAMBIAR PERSONAJE")}}</button>
  </div>
 </dialog>
 <dialog #homeDialog class="reroll-dialog" aria-labelledby="home-dialog-title" aria-describedby="home-dialog-description" (cancel)="$event.preventDefault();cancelHome()">
  <div class="reroll-dialog-icon" aria-hidden="true"><ion-icon name="arrow-back"></ion-icon></div>
- <h2 id="home-dialog-title">¿Volver al inicio?</h2>
- <p id="home-dialog-description">Si sales ahora, perderás el progreso de la partida actual.</p>
+ <h2 id="home-dialog-title">{{tr("¿Volver al inicio?")}}</h2>
+ <p id="home-dialog-description">{{tr("Si sales ahora, perderás el progreso de la partida actual.")}}</p>
  <div class="reroll-dialog-actions">
-  <button type="button" class="secondary-button" (click)="cancelHome()">SEGUIR JUGANDO</button>
-  <button type="button" class="primary-button" (click)="confirmHome()">VOLVER AL INICIO</button>
+  <button type="button" class="secondary-button" (click)="cancelHome()">{{tr("SEGUIR JUGANDO")}}</button>
+  <button type="button" class="primary-button" (click)="confirmHome()">{{tr("VOLVER AL INICIO")}}</button>
  </div>
 </dialog>
 </ion-app>

@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Adivina el personaje</string>
     <string name="title_activity_main">Adivina el personaje</string>
-    <string name="package_name">cl.juego.adivinapersonaje</string>
-    <string name="custom_url_scheme">cl.juego.adivinapersonaje</string>
+    <string name="package_name">cl.game.characterguess</string>
+    <string name="custom_url_scheme">cl.game.characterguess</string>
 </resources>

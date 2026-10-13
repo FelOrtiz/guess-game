@@ -1,4 +1,4 @@
-package cl.juego.adivinapersonaje;
+package cl.game.characterguess;
 
 import com.getcapacitor.BridgeActivity;
 

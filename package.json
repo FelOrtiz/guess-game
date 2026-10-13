@@ -5,6 +5,7 @@
   "scripts": {
     "start": "ng serve --host 0.0.0.0",
     "build": "ng build",
+    "build:pages": "ng build --base-href /guess-game/ --output-path dist/pages",
     "android": "npx cap run android",
     "ios": "npx cap run ios",
     "sync": "npm run build && npx cap sync"
@@ -15,6 +16,7 @@
     "@angular/compiler": "^19.2.0",
     "@angular/core": "^19.2.0",
     "@angular/forms": "^19.2.0",
+    "@angular/localize": "^19.2.25",
     "@angular/platform-browser": "^19.2.0",
     "@angular/router": "^19.2.0",
     "@capacitor/android": "^7.0.0",

@@ -4,6 +4,7 @@ import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@an
 import { FormsModule } from '@angular/forms';
 import { Capacitor } from '@capacitor/core';
 import { Haptics } from '@capacitor/haptics';
+import { Preferences } from '@capacitor/preferences';
 import { IonApp, IonContent, IonIcon, IonToggle, IonSpinner } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { arrowBack, checkmark, close, refresh, settingsOutline, play, pause, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline } from 'ionicons/icons';
@@ -43,6 +44,7 @@ export class AppComponent implements OnInit, OnDestroy {
  private soundSources=new Map<SoundKind,AudioBufferSourceNode>();
  private soundAudio:Record<SoundKind,HTMLAudioElement>|null=null;
  private soundUrls:Record<SoundKind,string>|null=null;
+ private settingsWriteQueue:Promise<void>=Promise.resolve();
  private expiredPlayerIndex:number|null=null;
  private rerollExcludedId:number|null=null;
  private scoringPlayerIndex=0;
@@ -77,21 +79,56 @@ export class AppComponent implements OnInit, OnDestroy {
  soundEnabled=true;vibrationEnabled=true;
  showFinalRanking=false;
  constructor(){addIcons({arrowBack,checkmark,close,refresh,settingsOutline,play,pause,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline});}
- ngOnInit():void{
-  try{const stored=JSON.parse(localStorage.getItem('adivina.categories')||'null');if(Array.isArray(stored)){this.enabled=this.allCategoryNames.filter(c=>stored.includes(c));}}catch{}
-  try{const stored=JSON.parse(localStorage.getItem('adivina.players')||'[]');if(Array.isArray(stored))this.playerNames=stored.filter((name):name is string=>typeof name==='string'&&!!name.trim()).map(name=>name.trim());}catch{}
-  const rounds=Number(localStorage.getItem('adivina.rounds'));if(this.roundOptions.includes(rounds))this.roundCount=rounds;
-  const duration=Number(localStorage.getItem('adivina.duration'));if(this.timeOptions.includes(duration))this.turnDuration=duration;
-  const revealDelay=Number(localStorage.getItem('adivina.revealDelay'));if(this.revealDelayOptions.includes(revealDelay))this.revealDelay=revealDelay;
-  const bonusScore=Number(localStorage.getItem('adivina.bonusScore'));if(this.bonusScoreOptions.includes(bonusScore))this.bonusScore=bonusScore;
-  const bonusQuestions=Number(localStorage.getItem('adivina.bonusQuestions'));if(this.bonusQuestionOptions.includes(bonusQuestions))this.bonusQuestions=bonusQuestions;
-  const baseScore=Number(localStorage.getItem('adivina.baseScore'));if(this.baseScoreOptions.includes(baseScore))this.baseScore=baseScore;
-  const cluePenalty=Number(localStorage.getItem('adivina.cluePenalty'));if(this.cluePenaltyOptions.includes(cluePenalty))this.cluePenalty=cluePenalty;
-  this.soundEnabled=localStorage.getItem('adivina.soundEnabled')!=='false';
-  this.vibrationEnabled=localStorage.getItem('adivina.vibrationEnabled')!=='false';
-  const storedAccent=localStorage.getItem('adivina.accent');if(this.accentOptions.some(option=>option.id===storedAccent))this.accentId=storedAccent as AccentId;
-  const storedNameSize=localStorage.getItem('adivina.characterNameSize');if(this.characterNameSizeOptions.some(option=>option.id===storedNameSize))this.characterNameSize=storedNameSize as CharacterNameSize;
+ async ngOnInit():Promise<void>{
+  await this.restoreSettings();
   this.http.get<Character[]>('assets/character.json').subscribe({next:(people)=>{this.characters=people;this.loading=false;},error:()=>{this.loading=false;this.error='No se pudo cargar el listado de personajes.';}});
+ }
+ private async restoreSettings():Promise<void>{
+  try{
+   const storedCategories=await this.readSetting('adivina.categories');
+   if(storedCategories){const stored=JSON.parse(storedCategories);if(Array.isArray(stored))this.enabled=this.allCategoryNames.filter(category=>stored.includes(category));}
+   const storedPlayers=await this.readSetting('adivina.players');
+   if(storedPlayers){const stored=JSON.parse(storedPlayers);if(Array.isArray(stored))this.playerNames=stored.filter((name):name is string=>typeof name==='string'&&!!name.trim()).map(name=>name.trim());}
+   const rounds=Number(await this.readSetting('adivina.rounds'));if(this.roundOptions.includes(rounds))this.roundCount=rounds;
+   const duration=Number(await this.readSetting('adivina.duration'));if(this.timeOptions.includes(duration))this.turnDuration=duration;
+   const revealDelay=Number(await this.readSetting('adivina.revealDelay'));if(this.revealDelayOptions.includes(revealDelay))this.revealDelay=revealDelay;
+   const bonusScore=Number(await this.readSetting('adivina.bonusScore'));if(this.bonusScoreOptions.includes(bonusScore))this.bonusScore=bonusScore;
+   const bonusQuestions=Number(await this.readSetting('adivina.bonusQuestions'));if(this.bonusQuestionOptions.includes(bonusQuestions))this.bonusQuestions=bonusQuestions;
+   const baseScore=Number(await this.readSetting('adivina.baseScore'));if(this.baseScoreOptions.includes(baseScore))this.baseScore=baseScore;
+   const cluePenalty=Number(await this.readSetting('adivina.cluePenalty'));if(this.cluePenaltyOptions.includes(cluePenalty))this.cluePenalty=cluePenalty;
+   this.soundEnabled=(await this.readSetting('adivina.soundEnabled'))!=='false';
+   this.vibrationEnabled=(await this.readSetting('adivina.vibrationEnabled'))!=='false';
+   const storedAccent=await this.readSetting('adivina.accent');if(this.accentOptions.some(option=>option.id===storedAccent))this.accentId=storedAccent as AccentId;
+   const storedNameSize=await this.readSetting('adivina.characterNameSize');if(this.characterNameSizeOptions.some(option=>option.id===storedNameSize))this.characterNameSize=storedNameSize as CharacterNameSize;
+  }catch{
+   this.error='No se pudo cargar toda la configuración guardada.';
+  }
+ }
+ private async readSetting(key:string):Promise<string|null>{
+  if(!Capacitor.isNativePlatform())return localStorage.getItem(key);
+  try{
+   const {value}=await Preferences.get({key});
+   if(value!==null)return value;
+  }catch{
+   this.error='No se pudo leer la configuración nativa; se intentará recuperar la copia local.';
+  }
+  const legacyValue=localStorage.getItem(key);
+  if(legacyValue!==null){
+   try{await Preferences.set({key,value:legacyValue});}
+   catch{this.error='No se pudo migrar toda la configuración al almacenamiento nativo.';}
+  }
+  return legacyValue;
+ }
+ private saveSetting(key:string,value:string):void{
+  let localCopySaved=false;
+  try{localStorage.setItem(key,value);localCopySaved=true;}catch{}
+  if(!Capacitor.isNativePlatform()){
+   if(!localCopySaved)this.error='No se pudo guardar la configuración en el dispositivo.';
+   return;
+  }
+  this.settingsWriteQueue=this.settingsWriteQueue.then(async()=>{await Preferences.set({key,value});}).catch(()=>{
+   this.error=localCopySaved?'No se pudo guardar en almacenamiento nativo; se conserva la copia local.':'No se pudo guardar la configuración en el dispositivo.';
+  });
  }
  ngOnDestroy():void{
   this.clearRevealTimer();this.clearTurnTimer();
@@ -140,10 +177,10 @@ export class AppComponent implements OnInit, OnDestroy {
  toggle(name:string,on:boolean):void{
   if(on){if(!this.enabled.includes(name))this.enabled=[...this.enabled,name];}
   else this.enabled=this.enabled.filter(c=>c!==name);
-  localStorage.setItem('adivina.categories',JSON.stringify(this.enabled));
+  this.saveSetting('adivina.categories',JSON.stringify(this.enabled));
  }
- selectAll():void{this.enabled=[...this.allCategoryNames];localStorage.setItem('adivina.categories',JSON.stringify(this.enabled));}
- deselectAll():void{this.enabled=[];localStorage.setItem('adivina.categories',JSON.stringify(this.enabled));}
+ selectAll():void{this.enabled=[...this.allCategoryNames];this.saveSetting('adivina.categories',JSON.stringify(this.enabled));}
+ deselectAll():void{this.enabled=[];this.saveSetting('adivina.categories',JSON.stringify(this.enabled));}
  addPlayer():void{
   const name=this.newPlayerName.trim();if(!name)return;
   this.playerNames=[...this.playerNames,name];this.newPlayerName='';this.savePlayers();
@@ -155,18 +192,18 @@ export class AppComponent implements OnInit, OnDestroy {
   this.playerNames=[...this.playerNames];this.savePlayers();
  }
  private savePlayers():void{
-  localStorage.setItem('adivina.players',JSON.stringify(this.playerNames));
+  this.saveSetting('adivina.players',JSON.stringify(this.playerNames));
   this.prepareAudio();this.playSound('save');
  }
- setRounds(value:number):void{if(this.roundOptions.includes(value)){this.roundCount=value;localStorage.setItem('adivina.rounds',String(value));}}
- setDuration(value:number):void{if(this.timeOptions.includes(value)){this.turnDuration=value;localStorage.setItem('adivina.duration',String(value));}}
- setRevealDelay(value:number):void{if(this.revealDelayOptions.includes(value)){this.revealDelay=value;localStorage.setItem('adivina.revealDelay',String(value));}}
- setBonusScore(value:number):void{if(this.bonusScoreOptions.includes(value)){this.bonusScore=value;localStorage.setItem('adivina.bonusScore',String(value));}}
- setBonusQuestions(value:number):void{if(this.bonusQuestionOptions.includes(value)){this.bonusQuestions=value;localStorage.setItem('adivina.bonusQuestions',String(value));}}
- setBaseScore(value:number):void{if(this.baseScoreOptions.includes(value)){this.baseScore=value;localStorage.setItem('adivina.baseScore',String(value));}}
- setCluePenalty(value:number):void{if(this.cluePenaltyOptions.includes(value)){this.cluePenalty=value;localStorage.setItem('adivina.cluePenalty',String(value));}}
+ setRounds(value:number):void{if(this.roundOptions.includes(value)){this.roundCount=value;this.saveSetting('adivina.rounds',String(value));}}
+ setDuration(value:number):void{if(this.timeOptions.includes(value)){this.turnDuration=value;this.saveSetting('adivina.duration',String(value));}}
+ setRevealDelay(value:number):void{if(this.revealDelayOptions.includes(value)){this.revealDelay=value;this.saveSetting('adivina.revealDelay',String(value));}}
+ setBonusScore(value:number):void{if(this.bonusScoreOptions.includes(value)){this.bonusScore=value;this.saveSetting('adivina.bonusScore',String(value));}}
+ setBonusQuestions(value:number):void{if(this.bonusQuestionOptions.includes(value)){this.bonusQuestions=value;this.saveSetting('adivina.bonusQuestions',String(value));}}
+ setBaseScore(value:number):void{if(this.baseScoreOptions.includes(value)){this.baseScore=value;this.saveSetting('adivina.baseScore',String(value));}}
+ setCluePenalty(value:number):void{if(this.cluePenaltyOptions.includes(value)){this.cluePenalty=value;this.saveSetting('adivina.cluePenalty',String(value));}}
  setSoundEnabled(enabled:boolean):void{
-  this.soundEnabled=enabled;localStorage.setItem('adivina.soundEnabled',String(enabled));
+  this.soundEnabled=enabled;this.saveSetting('adivina.soundEnabled',String(enabled));
   if(enabled)this.prepareAudio();
   else{
    for(const kind of this.soundSources.keys())this.stopSoundSource(kind);
@@ -174,10 +211,10 @@ export class AppComponent implements OnInit, OnDestroy {
   }
  }
  setVibrationEnabled(enabled:boolean):void{
-  this.vibrationEnabled=enabled;localStorage.setItem('adivina.vibrationEnabled',String(enabled));
+  this.vibrationEnabled=enabled;this.saveSetting('adivina.vibrationEnabled',String(enabled));
  }
- setAccent(id:AccentId):void{this.accentId=id;localStorage.setItem('adivina.accent',id);}
- setCharacterNameSize(size:CharacterNameSize):void{this.characterNameSize=size;localStorage.setItem('adivina.characterNameSize',size);}
+ setAccent(id:AccentId):void{this.accentId=id;this.saveSetting('adivina.accent',id);}
+ setCharacterNameSize(size:CharacterNameSize):void{this.characterNameSize=size;this.saveSetting('adivina.characterNameSize',size);}
  timeLabel(seconds:number):string{return seconds===30?'30 seg':seconds===60?'1 min':seconds===90?'1 min 30 seg':'2 min';}
  requestHome():void{
   if(this.homeDialog.nativeElement.open)return;

@@ -1,0 +1,7 @@
+@import '@ionic/angular/css/core.css';
+@import '@ionic/angular/css/normalize.css';
+@import '@ionic/angular/css/structure.css';
+@import '@ionic/angular/css/typography.css';
+@import '@ionic/angular/css/display.css';
+:root {--ion-background-color:#0b1024;--ion-text-color:#f6f6ff;--ion-color-primary:#b4fa66;--ion-font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+*{box-sizing:border-box}html,body{margin:0;background:#0b1024}button{font:inherit;cursor:pointer}ion-content.screen{--background:radial-gradient(ellipse at 50% 15%,#1c2450 0%,#0b1024 62%)}

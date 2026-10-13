@@ -218,3 +218,27 @@
  .home-stats{margin-top:12px;flex-shrink:0}
  .home-stats strong{font-size:22px}
 }
+.category-name-button{width:fit-content;max-width:100%;padding:0;border:0;background:none;color:#f5f5ff;text-align:left;font:inherit;font-size:13px;font-weight:850;text-decoration:underline;text-decoration-color:var(--ui-accent);text-underline-offset:3px}
+.category-name-button:focus-visible{outline:2px solid var(--ui-accent);outline-offset:3px}
+.character-browser h1{overflow-wrap:anywhere}
+.character-sort{display:flex;gap:8px;margin:22px 0 16px}
+.character-sort button{flex:1;min-height:46px;border:1px solid #465478;border-radius:13px;background:#232b4a;color:#e5e9ff;font-size:12px;font-weight:900}
+.character-sort button.selected{border-color:var(--ui-accent);background:var(--ui-accent);color:#12202c}
+.character-browser-list{display:grid;gap:8px}
+.character-browser-list button{display:grid;grid-template-columns:48px minmax(0,1fr) 18px;align-items:center;gap:10px;width:100%;min-height:58px;padding:10px 14px;border:1px solid #344062;border-radius:14px;background:#202945;color:#f5f5ff;text-align:left}
+.character-browser-list button span:first-child{color:var(--ui-accent);font-size:11px;font-weight:900}
+.character-browser-list button strong{overflow-wrap:anywhere;font-size:14px}
+.character-browser-list button span:last-child{color:var(--ui-accent);font-size:24px}
+.preview-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.preview-heading span:last-child{color:#a8b2d3;font-size:12px;font-weight:900}
+.card-preview-screen{touch-action:pan-y}
+.card-preview-screen .character-card{cursor:default;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.card-preview-screen .character-photo{pointer-events:none;-webkit-touch-callout:none}
+.preview-card-bottom{grid-template-columns:44px minmax(0,1fr) 44px;align-items:center}
+.preview-card-bottom .category-pill{justify-content:center;text-align:center}
+.preview-card-bottom .preview-nav-button{width:44px;min-width:44px;justify-content:center;padding:0;color:var(--accent);cursor:pointer;touch-action:manipulation}
+.preview-nav-button ion-icon{font-size:22px}
+.preview-nav-button:last-of-type ion-icon{transform:rotate(180deg)}
+.preview-nav-button:disabled{opacity:.5;cursor:default}
+.preview-loading{position:absolute;inset:0;z-index:3;display:grid;place-items:center;background:#10182cbb;pointer-events:none}
+.preview-loading ion-spinner{width:46px;height:46px;color:var(--accent)}

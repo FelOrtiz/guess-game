@@ -10,7 +10,7 @@ import { addIcons } from 'ionicons';
 import { tr } from './i18n';
 import { arrowBack, checkmark, close, refresh, settingsOutline, play, pause, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline, phonePortraitOutline } from 'ionicons/icons';
 
-type View = 'home' | 'setup' | 'game' | 'scoring' | 'between' | 'timeout' | 'roundResult' | 'settings' | 'finished';
+type View = 'home' | 'setup' | 'game' | 'scoring' | 'between' | 'timeout' | 'roundResult' | 'settings' | 'categoryCards' | 'characterPreview' | 'finished';
 type SetupStep = 'players' | 'categories';
 type SettingsTab = 'general' | 'others' | 'players' | 'categories';
 type AccentId = 'green' | 'blue' | 'red' | 'yellow' | 'orange';
@@ -52,6 +52,8 @@ export class AppComponent implements OnInit, OnDestroy {
  private expiredPlayerIndex:number|null=null;
  private rerollExcludedId:number|null=null;
  private scoringPlayerIndex=0;
+ private previewTouchStart:{x:number;y:number}|null=null;
+ private previewImageRequest=0;
  correctingExpiredTurn=false;
  private scoreReturnView:View='between';
  readonly categories=CATEGORY_DATA;
@@ -77,6 +79,11 @@ export class AppComponent implements OnInit, OnDestroy {
  settingsTab:SettingsTab='general';
  setupStep:SetupStep='players';
  setupStartedWithPlayers=false;
+ categoryBrowserReturnView:'settings'|'setup'='settings';
+ selectedCategoryName='';
+ characterSort:'id'|'name'='id';
+ previewCharacter:Character|null=null;
+ previewLoading=false;
  current:Character|null=null; cardFlipped=false; hasTurnStarted=false; remaining:number[]=[]; skipped=0;loading=true;error=''; countdown=0;
  playerNames:string[]=[];newPlayerName='';roundCount=3;turnDuration=60;revealDelay=5;
  players:Player[]=[];roundNumber=1;playerIndex=0;timeLeft=0;
@@ -156,6 +163,11 @@ export class AppComponent implements OnInit, OnDestroy {
  get canStart():boolean{return this.playerNames.length>=2&&this.categoryCount>0&&this.availableCount>0;}
  get answered():number{return this.players.reduce((total,player)=>total+player.correct+player.errors,0);}
  get category():Category|undefined{return this.categories.find(c=>c.name===this.current?.category);}
+ categoryFor(person:Character):Category|undefined{return this.categories.find(c=>c.name===person.category);}
+ get categoryCharacters():Character[]{
+  const people=this.characters.filter(person=>person.category===this.selectedCategoryName);
+  return people.sort(this.characterSort==='id'?(a,b)=>a.id-b.id:(a,b)=>a.name.localeCompare(b.name,this.language));
+ }
  get turnTimerRunning():boolean{return this.turnTimer!==null;}
  get progress():number{return this.players.length?Math.round(((this.roundNumber-1)*this.players.length+this.playerIndex)/(this.roundCount*this.players.length)*100):0;}
  get activePlayer():Player|undefined{return this.players[this.playerIndex];}
@@ -172,23 +184,26 @@ export class AppComponent implements OnInit, OnDestroy {
  get finalWinnerNames():string{return this.finalWinners.map(p=>p.name).join(this.language==='en'?' and ':' y ');}
  get formattedTime():string{return `${Math.floor(this.timeLeft/60)}:${String(this.timeLeft%60).padStart(2,'0')}`;}
  signedScore(score:number):string{return score>0?`+${score}`:String(score);}
- get characterAge():number|null{
-  const birthday=this.current?.birthday;
+ get characterAge():number|null{return this.current?this.characterAgeFor(this.current):null;}
+ characterAgeFor(person:Character):number|null{
+  const birthday=person.birthday;
   if(!birthday)return null;
   const [year,month,day]=birthday.split('-').map(Number);
   if(!year||!month||!day)return null;
-  const endDate=this.current?.isAlive?new Date():this.current?.deathDate?new Date(`${this.current.deathDate}T12:00:00`):null;
+  const endDate=person.isAlive?new Date():person.deathDate?new Date(`${person.deathDate}T12:00:00`):null;
   if(!endDate||Number.isNaN(endDate.getTime()))return null;
   const age=endDate.getFullYear()-year-(endDate.getMonth()+1<month||(endDate.getMonth()+1===month&&endDate.getDate()<day)?1:0);
   return age>=0?age:null;
  }
  get vibrationUnavailable():boolean{return !Capacitor.isNativePlatform()&&typeof navigator.vibrate!=='function';}
- get flag():string{
-  const raw=this.current?.nationality||'';
+ get flag():string{return this.current?this.flagFor(this.current):'🌐';}
+ flagFor(person:Character):string{
+  const raw=person.nationality||'';
   const match:[string,string][]=[['Chile','🇨🇱'],['Estados Unidos','🇺🇸'],['Japón','🇯🇵'],['Italia','🇮🇹'],['Reino Unido','🇬🇧'],['Francia','🇫🇷'],['Alemania','🇩🇪'],['España','🇪🇸'],['Canadá','🇨🇦'],['México','🇲🇽'],['Argentina','🇦🇷'],['Brasil','🇧🇷'],['Australia','🇦🇺'],['Suecia','🇸🇪'],['Polonia','🇵🇱'],['Corea del Sur','🇰🇷'],['Puerto Rico','🇵🇷'],['Colombia','🇨🇴'],['Portugal','🇵🇹'],['Egipto','🇪🇬'],['India','🇮🇳'],['China','🇨🇳'],['Rusia','🇷🇺'],['Países Bajos','🇳🇱'],['Jamaica','🇯🇲'],['Barbados','🇧🇧'],['Serbia','🇷🇸'],['Austria','🇦🇹'],['Grecia','🇬🇷'],['Sudáfrica','🇿🇦'],['Noruega','🇳🇴'],['Suiza','🇨🇭'],['Bélgica','🇧🇪'],['Croacia','🇭🇷'],['Egipto antiguo','🇪🇬'],['Georgia','🇬🇪'],['Cabo Verde','🇨🇻'],['Uruguay','🇺🇾'],['Perú','🇵🇪'],['Nigeria','🇳🇬'],['Irlanda','🇮🇪'],['Nueva Zelanda','🇳🇿']];
   const found=match.find(([country])=>raw.startsWith(country));return found?found[1]:'🌐';
  }
- get countryLabel():string{return tr(this.current?.nationality||'No especificada');}
+ get countryLabel():string{return this.current?this.countryLabelFor(this.current):tr('No especificada');}
+ countryLabelFor(person:Character):string{return tr(person.nationality||'No especificada');}
  isEnabled(name:string):boolean{return this.enabled.includes(name);}
  toggle(name:string,on:boolean):void{
   if(on){if(!this.enabled.includes(name))this.enabled=[...this.enabled,name];}
@@ -240,6 +255,8 @@ export class AppComponent implements OnInit, OnDestroy {
  }
  timeLabel(seconds:number):string{return seconds===30?`30 ${tr('seg')}`:seconds===60?'1 min':seconds===90?`1 min 30 ${tr('seg')}`:'2 min';}
  requestHome():void{
+  if(this.view==='characterPreview'){this.previewImageRequest++;this.previewLoading=false;this.previewCharacter=null;this.view='categoryCards';return;}
+  if(this.view==='categoryCards'){this.view=this.categoryBrowserReturnView;return;}
   if(this.homeDialog.nativeElement.open)return;
   if(this.view==='settings'||this.view==='setup'){this.goHome();return;}
   if(this.view==='game'&&this.cardFlipped){
@@ -260,6 +277,46 @@ export class AppComponent implements OnInit, OnDestroy {
  }
  goHome():void{this.clearRevealTimer();this.clearTurnTimer();this.view='home';}
  openSettings():void{this.settingsTab='general';this.view='settings';this.prepareAudio();this.playSound('gear');}
+ openCategoryCards(name:string):void{
+  this.categoryBrowserReturnView=this.view==='setup'?'setup':'settings';
+  this.selectedCategoryName=name;
+  this.characterSort='id';
+  this.view='categoryCards';
+ }
+ previewCard(person:Character):void{this.previewCharacter=person;this.view='characterPreview';}
+ movePreviewCard(direction:-1|1):void{
+  if(this.view!=='characterPreview'||!this.previewCharacter||this.previewLoading)return;
+  const people=this.categoryCharacters;
+  const index=people.findIndex(person=>person.id===this.previewCharacter?.id);
+  if(index<0||people.length<2)return;
+  const next=people[(index+direction+people.length)%people.length];
+  if(next.category!=='Actores de Hollywood'){this.previewCharacter=next;return;}
+  this.previewLoading=true;
+  const request=++this.previewImageRequest;
+  const image=new Image();
+  const show=()=>{
+   if(request!==this.previewImageRequest||this.view!=='characterPreview')return;
+   this.previewCharacter=next;
+   this.previewLoading=false;
+  };
+  image.onload=()=>{void image.decode().then(show,show);};
+  image.onerror=show;
+  image.src=`assets/photos/${next.id}.jpg`;
+ }
+ onPreviewTouchStart(event:TouchEvent):void{
+  if(event.touches.length!==1){this.previewTouchStart=null;return;}
+  this.previewTouchStart={x:event.touches[0].clientX,y:event.touches[0].clientY};
+ }
+ onPreviewTouchEnd(event:TouchEvent):void{
+  const start=this.previewTouchStart;
+  this.previewTouchStart=null;
+  if(!start||event.changedTouches.length!==1||!this.previewCharacter)return;
+  const dx=event.changedTouches[0].clientX-start.x;
+  const dy=event.changedTouches[0].clientY-start.y;
+  if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.25)return;
+  this.movePreviewCard(dx>0?-1:1);
+ }
+ cancelPreviewSwipe():void{this.previewTouchStart=null;}
  openSetup():void{
   if(this.canStart){this.beginNewGame();return;}
   this.setupStartedWithPlayers=this.playerNames.length<2;

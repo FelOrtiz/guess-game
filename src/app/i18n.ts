@@ -255,5 +255,16 @@ const messages: Record<string,string> = {
  "EMPEZAR PARTIDA": $localize`:@@s252:EMPEZAR PARTIDA`,
  "Activar puntaje de bonificación": $localize`:@@s253:Activar puntaje de bonificación`,
  "Activar puntaje al dar pista": $localize`:@@s254:Activar puntaje al dar pista`,
+ "CARTAS DE LA CATEGORÍA": $localize`:@@s255:CARTAS DE LA CATEGORÍA`,
+ "Ordenar cartas": $localize`:@@s256:Ordenar cartas`,
+ "POR ID": $localize`:@@s257:POR ID`,
+ "A–Z": $localize`:@@s258:A–Z`,
+ "VISTA PREVIA DE CARTA": $localize`:@@s259:VISTA PREVIA DE CARTA`,
+ "Ver cartas de": $localize`:@@s260:Ver cartas de`,
+ "Volver a la lista": $localize`:@@s261:Volver a la lista`,
+ "Volver a categorías": $localize`:@@s262:Volver a categorías`,
+ "Personaje anterior": $localize`:@@s263:Personaje anterior`,
+ "Personaje siguiente": $localize`:@@s264:Personaje siguiente`,
+ "Cargando carta...": $localize`:@@s265:Cargando carta...`,
 };
 export function tr(source: string): string { return messages[source] ?? source; }

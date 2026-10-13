@@ -3,7 +3,7 @@
   <ng-container *ngIf="loading"><div class="loading"><ion-spinner name="crescent"></ion-spinner><p>{{tr("Cargando personajes...")}}</p></div></ng-container>
   <ng-container *ngIf="!loading">
    <header class="topbar">
-    <button class="icon-button back" *ngIf="view !== 'home' && view !== 'scoring' && view !== 'finished'" (click)="requestHome()" [attr.aria-label]="tr('Volver al inicio')"><ion-icon name="arrow-back"></ion-icon></button>
+    <button class="icon-button back" *ngIf="view !== 'home' && view !== 'scoring' && view !== 'finished'" (click)="requestHome()" [attr.aria-label]="view==='characterPreview' ? tr('Volver a la lista') : view==='categoryCards' ? tr('Volver a categorías') : tr('Volver al inicio')"><ion-icon name="arrow-back"></ion-icon></button>
     <div class="top-placeholder" *ngIf="view === 'home' || view === 'finished'"></div>
     <div class="top-placeholder" *ngIf="view === 'scoring'"></div>
     <div class="brand"><span class="brand-icon">✦</span> {{tr("ADIVINA")}}<span class="brand-light">{{tr("QUIÉN")}}</span></div>
@@ -11,6 +11,17 @@
     <button class="icon-button" *ngIf="view === 'scoring'" (click)="closeScoring()" [attr.aria-label]="tr('Cerrar sin guardar')"><ion-icon name="close"></ion-icon></button>
     <div class="top-placeholder" *ngIf="view !== 'game' && view !== 'scoring'"></div>
    </header>
+   <ng-template #cardFront let-person let-age="age" let-timer="timer" let-preview="preview">
+    <img *ngIf="person.category==='Actores de Hollywood'" class="character-photo" [src]="'assets/photos/'+person.id+'.jpg'" [alt]="tr('Retrato de')+' '+person.name" decoding="async" draggable="false" />
+    <div class="card-top"><div class="flag-pill card-panel" [attr.aria-label]="countryLabelFor(person)"><span class="flag">{{flagFor(person)}}</span><span class="country">{{countryLabelFor(person)}}</span></div><div class="character-meta card-panel" [attr.aria-label]="age !== null ? (person.isAlive ? age + ' ' + tr('años') + ', ' + tr('vivo') : tr('Murió a los') + ' ' + age + ' ' + tr('años')) : (person.isAlive ? tr('vivo') : tr('fallecido'))"><span *ngIf="age !== null">{{age}} {{tr('años')}}</span><span aria-hidden="true">{{person.isAlive ? '❤️' : '💀'}}</span></div></div>
+    <div class="card-center"><h2>{{person.name}}</h2></div>
+    <div class="card-bottom" [class.preview-card-bottom]="preview">
+     <button *ngIf="preview" type="button" class="preview-nav-button card-panel" (click)="movePreviewCard(-1)" [disabled]="previewLoading" [attr.aria-label]="tr('Personaje anterior')"><ion-icon name="arrow-back" aria-hidden="true"></ion-icon></button>
+     <span class="category-pill card-panel">{{categoryFor(person)?.icon}} {{tr(person.category)}}</span>
+     <button *ngIf="preview" type="button" class="preview-nav-button card-panel" (click)="movePreviewCard(1)" [disabled]="previewLoading" [attr.aria-label]="tr('Personaje siguiente')"><ion-icon name="arrow-back" aria-hidden="true"></ion-icon></button>
+     <span *ngIf="timer !== null" class="card-timer card-panel" [class.time-low]="view==='game' && timeLeft<=10" [attr.aria-label]="tr('Tiempo restante:')+' '+timer">{{timer}}</span>
+    </div>
+   </ng-template>
    <main *ngIf="view==='home'" class="home fade">
     <div class="hero-symbol"><span>?</span><span class="hero-orbit">✦</span></div>
     <div class="eyebrow">{{tr("EL JUEGO DE LAS PREGUNTAS")}}</div>
@@ -42,24 +53,36 @@
     <ng-container *ngIf="setupStep==='categories'">
      <section class="settings-section"><h2>{{tr('Categorías')}}</h2><p>{{tr('Elige qué personajes pueden aparecer durante el juego.')}}</p>
       <div class="settings-head"><strong>{{categoryCount}} {{tr('de')}} {{categories.length}} {{tr('activas')}}</strong><div class="category-actions"><button type="button" (click)="selectAll()" [disabled]="categoryCount===categories.length">{{tr('Seleccionar todas')}}</button><button type="button" (click)="deselectAll()" [disabled]="categoryCount===0">{{tr('Deseleccionar todas')}}</button></div></div>
-      <div class="category-list"><div class="category-row" *ngFor="let cat of categories"><span class="category-emoji" [style.background]="cat.light">{{cat.icon}}</span><div class="category-copy"><strong>{{tr(cat.name)}}</strong><small>{{tr('50 personajes')}}</small></div><ion-toggle [checked]="isEnabled(cat.name)" (ionChange)="toggle(cat.name,$event.detail.checked)" [attr.aria-label]="tr(cat.name)"></ion-toggle></div></div>
+      <div class="category-list"><div class="category-row" *ngFor="let cat of categories"><span class="category-emoji" [style.background]="cat.light">{{cat.icon}}</span><div class="category-copy"><button type="button" class="category-name-button" (click)="openCategoryCards(cat.name)" [attr.aria-label]="tr('Ver cartas de')+' '+tr(cat.name)">{{tr(cat.name)}}</button><small>{{tr('50 personajes')}}</small></div><ion-toggle [checked]="isEnabled(cat.name)" (ionChange)="toggle(cat.name,$event.detail.checked)" [attr.aria-label]="tr(cat.name)"></ion-toggle></div></div>
      </section>
      <p class="setup-requirement" *ngIf="!categoryCount" role="status">{{tr('Activa al menos una categoría para empezar.')}}</p>
      <p class="setup-requirement" *ngIf="categoryCount>0 && !availableCount" role="status">{{tr('No hay personajes disponibles en las categorías activas.')}}</p>
      <div class="setup-actions" [class.single]="!setupStartedWithPlayers"><button *ngIf="setupStartedWithPlayers" type="button" class="secondary-button" (click)="setupStep='players'">{{tr('VOLVER A JUGADORES')}}</button><button type="button" class="primary-button" (click)="start()" [disabled]="!canStart">{{tr('EMPEZAR PARTIDA')}}</button></div>
     </ng-container>
    </main>
+   <main *ngIf="view==='categoryCards'" class="settings character-browser fade">
+    <div class="section-kicker">{{tr('CARTAS DE LA CATEGORÍA')}}</div>
+    <h1>{{tr(selectedCategoryName)}}</h1>
+    <p>{{categoryCharacters.length}} {{tr('personajes')}}</p>
+    <div class="character-sort" role="group" [attr.aria-label]="tr('Ordenar cartas')">
+     <button type="button" (click)="characterSort='id'" [class.selected]="characterSort==='id'" [attr.aria-pressed]="characterSort==='id'">{{tr('POR ID')}}</button>
+     <button type="button" (click)="characterSort='name'" [class.selected]="characterSort==='name'" [attr.aria-pressed]="characterSort==='name'">{{tr('A–Z')}}</button>
+    </div>
+    <div class="character-browser-list"><button type="button" *ngFor="let person of categoryCharacters" (click)="previewCard(person)"><span>#{{person.id}}</span><strong>{{person.name}}</strong><span aria-hidden="true">›</span></button></div>
+   </main>
+   <main *ngIf="view==='characterPreview' && previewCharacter" class="game card-preview-screen fade" (touchstart)="onPreviewTouchStart($event)" (touchend)="onPreviewTouchEnd($event)" (touchcancel)="cancelPreviewSwipe()">
+    <div class="preview-heading"><span class="section-kicker">{{tr('VISTA PREVIA DE CARTA')}}</span><span>#{{previewCharacter.id}}</span></div>
+    <section class="character-card" [class.has-photo]="previewCharacter.category==='Actores de Hollywood'" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [style.--accent]="categoryFor(previewCharacter)?.color" [style.--accent-muted]="categoryFor(previewCharacter)?.light" [attr.aria-label]="tr('Vista previa')+' '+previewCharacter.name" (contextmenu)="$event.preventDefault()" (dragstart)="$event.preventDefault()">
+     <div class="card-face card-front"><ng-container *ngTemplateOutlet="cardFront;context:{$implicit:previewCharacter,age:characterAgeFor(previewCharacter),timer:null,preview:true}"></ng-container></div>
+     <div *ngIf="previewLoading" class="preview-loading" role="status" [attr.aria-label]="tr('Cargando carta...')"><ion-spinner name="crescent" aria-hidden="true"></ion-spinner></div>
+    </section>
+   </main>
    <main *ngIf="view==='game' && current" class="game fade">
     <div class="game-meta"><span>{{tr("RONDA")}} {{roundNumber}} {{tr("DE")}} {{roundCount}}</span><strong class="game-player">{{activePlayer?.name}}</strong><span>{{tr("TURNO")}} {{playerIndex+1}} {{tr("DE")}} {{players.length}}</span></div>
     <div class="progress"><span [style.width.%]="progress"></span></div>
     <section class="character-card" [class.has-photo]="current.category==='Actores de Hollywood'" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [class.flipped]="cardFlipped" [class.time-low]="cardFlipped && turnTimerRunning && timeLeft<=10" [style.--accent]="category?.color" [style.--accent-muted]="category?.light" [style.--time-progress]="(timeLeft / turnDuration * 100) + '%'" role="button" tabindex="0" [attr.aria-label]="cardFlipped ? tr('Mostrar personaje y pausar tiempo') : (hasTurnStarted ? tr('Ocultar personaje y reanudar tiempo') : tr('Ocultar personaje e iniciar tiempo'))" [attr.aria-pressed]="cardFlipped" (click)="flipCard()" (keydown.enter)="flipCard()" (keydown.space)="$event.preventDefault();flipCard()">
      <div class="card-rotator">
-      <div class="card-face card-front" [attr.aria-hidden]="cardFlipped">
-       <img *ngIf="current.category==='Actores de Hollywood'" class="character-photo" [src]="'assets/photos/'+current.id+'.jpg'" [alt]="tr('Retrato de')+' '+current.name" decoding="async" />
-       <div class="card-top"><div class="flag-pill card-panel" [attr.aria-label]="countryLabel"><span class="flag">{{flag}}</span><span class="country">{{countryLabel}}</span></div><div class="character-meta card-panel" [attr.aria-label]="characterAge !== null ? (current.isAlive ? characterAge + ' ' + tr('años') + ', ' + tr('vivo') : tr('Murió a los') + ' ' + characterAge + ' ' + tr('años')) : (current.isAlive ? tr('vivo') : tr('fallecido'))"><span *ngIf="characterAge !== null">{{characterAge}} {{tr('años')}}</span><span aria-hidden="true">{{current.isAlive ? '❤️' : '💀'}}</span></div></div>
-       <div class="card-center"><h2>{{current.name}}</h2></div>
-       <div class="card-bottom"><span class="category-pill card-panel">{{category?.icon}} {{tr(current.category)}}</span><span class="card-timer card-panel" [class.time-low]="timeLeft<=10" [attr.aria-label]="tr('Tiempo restante:')+' '+formattedTime">{{formattedTime}}</span></div>
-      </div>
+      <div class="card-face card-front" [attr.aria-hidden]="cardFlipped"><ng-container *ngTemplateOutlet="cardFront;context:{$implicit:current,age:characterAge,timer:formattedTime}"></ng-container></div>
       <div class="card-face card-back" [attr.aria-hidden]="!cardFlipped">
        <span class="card-timer card-panel card-back-timer" [class.time-low]="timeLeft<=10" [attr.aria-label]="tr('Tiempo restante:')+' '+formattedTime">{{formattedTime}}</span>
        <div *ngIf="cardFlipped" class="game-actions card-back-actions" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
@@ -160,7 +183,7 @@
     <div class="settings-tab-panel" [hidden]="settingsTab!=='categories'">
      <section class="settings-section"><h2>{{tr("Categorías")}}</h2><p>{{tr("Elige qué personajes pueden aparecer durante el juego.")}}</p>
       <div class="settings-head"><strong>{{categoryCount}} {{tr("de")}} {{categories.length}} {{tr("activas")}}</strong><div class="category-actions"><button type="button" (click)="selectAll()" [disabled]="categoryCount===categories.length">{{tr("Seleccionar todas")}}</button><button type="button" (click)="deselectAll()" [disabled]="categoryCount===0">{{tr("Deseleccionar todas")}}</button></div></div>
-      <div class="category-list"><div class="category-row" *ngFor="let cat of categories"><span class="category-emoji" [style.background]="cat.light">{{cat.icon}}</span><div class="category-copy"><strong>{{tr(cat.name)}}</strong><small>{{tr("50 personajes")}}</small></div><ion-toggle [checked]="isEnabled(cat.name)" (ionChange)="toggle(cat.name,$event.detail.checked)" [attr.aria-label]="tr(cat.name)"></ion-toggle></div></div>
+      <div class="category-list"><div class="category-row" *ngFor="let cat of categories"><span class="category-emoji" [style.background]="cat.light">{{cat.icon}}</span><div class="category-copy"><button type="button" class="category-name-button" (click)="openCategoryCards(cat.name)" [attr.aria-label]="tr('Ver cartas de')+' '+tr(cat.name)">{{tr(cat.name)}}</button><small>{{tr("50 personajes")}}</small></div><ion-toggle [checked]="isEnabled(cat.name)" (ionChange)="toggle(cat.name,$event.detail.checked)" [attr.aria-label]="tr(cat.name)"></ion-toggle></div></div>
      </section>
     </div>
    </main>

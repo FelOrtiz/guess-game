@@ -1,70 +1,88 @@
-# Adivina Quién — Angular + Ionic + Capacitor
+# Guess the Character
 
-Aplicación móvil de adivinar personajes, con **400 personajes** del listado suministrado.
+A mobile-friendly character guessing game built with Angular, Ionic, and Capacitor. It includes 400 characters across eight categories and works offline after it has been built.
 
-## Funciones
-- Pantalla de inicio con **Nuevo juego** y **Configurar**.
-- Personaje aleatorio con **nombre grande**, **categoría coloreada** y **bandera/nacionalidad** en la esquina superior izquierda.
-- Botones **Correcto (✓)** e **Incorrecto (✕)**, contadores de puntos.
-- **Reroll (↻)** arriba a la derecha, sin afectar aciertos/errores.
-- Configuración para activar/desactivar cualquiera de las 8 categorías, persistida en el dispositivo.
-- Sin repeticiones durante una partida; pantalla de resultados al agotar el conjunto.
-- Datos offline incluidos en `src/assets/character.json`. No requiere servidor una vez compilada.
+## Features
 
-## Requisitos
-- Node.js 20.11+ o 22+, npm.
-- Para Android: Android Studio + Android SDK + JDK 17.
-- Para iOS: macOS + Xcode + CocoaPods, y firma de Apple para instalar/distribuir.
+- Start a game with multiple players and configure the game rules.
+- Guess a character using the name, category, nationality, and optional photo shown on the card.
+- Mark guesses as correct or incorrect and track scores across rounds.
+- Reroll a character without changing the current player's score.
+- Enable or disable any of the eight categories. Player and game settings are saved on the device.
+- Browse category cards in a preview before starting a game.
+- Use the app in Spanish or English.
+- Play without repeating characters in the same game.
 
-## Desarrollo web
+Character data is bundled in `src/assets/character.json`, and photos are bundled in `src/assets/photos/`. The app does not need a server to run after it has been built.
+
+## Requirements
+
+- Node.js 20.11+ or 22+, and npm.
+- Android builds: Android Studio, Android SDK, and JDK 17.
+- iOS builds: macOS, Xcode, CocoaPods, and Apple signing credentials to install or distribute the app.
+
+## Run locally
+
 ```bash
 npm install
 npm start
 ```
-Abre http://localhost:4200.
 
-## Publicar en GitHub Pages
+Open <http://localhost:4200> in your browser.
 
-El sitio se publica en https://felortiz.github.io/guess-game/ mediante el workflow de GitHub Actions en `.github/workflows/deploy-pages.yml`.
+## Publish to GitHub Pages
 
-1. En GitHub, abre **Settings → Pages** del repositorio y selecciona **GitHub Actions** como fuente de publicación.
-2. Confirma que los cambios estén subidos a la rama `main`. Cada push a `main` compila y publica el sitio. También puedes iniciarlo manualmente en **Actions → Deploy GitHub Pages → Run workflow**.
+The site is published at <https://felortiz.github.io/guess-game/> using the GitHub Actions workflow in `.github/workflows/deploy-pages.yml`.
 
-Para revisar la compilación de Pages en tu equipo, ejecuta `npm run build:pages`. El resultado queda en `dist/pages/browser`; `npm run build` sigue generando la versión para Capacitor en `www/browser`.
+1. In the repository, open **Settings → Pages** and choose **GitHub Actions** as the publishing source.
+2. Push your changes to the `main` branch. Each push builds and publishes the site. You can also start it manually from **Actions → Deploy GitHub Pages → Run workflow**.
 
-### Añadir al inicio en iPhone
+To build the Pages version locally, run:
 
-Abre `https://felortiz.github.io/guess-game/` directamente en **Safari**. Toca el menú de página y luego **Compartir → Añadir a pantalla de inicio**. Activa **Abrir como app** y toca **Añadir**. Si no aparece la acción, baja al final de la lista, toca **Editar acciones** y agrega **Añadir a pantalla de inicio**. [Instrucciones de Apple](https://support.apple.com/guide/iphone/turn-a-website-into-an-app-iphea86e5236/ios).
+```bash
+npm run build:pages
+```
 
-Al probar desde Safari en iPhone mediante un túnel, los pitidos deben sonar al tocar «Iniciar» y durante el turno. Safari no ofrece `navigator.vibrate`, por lo que la vibración solo se puede probar con la app iOS instalada desde Xcode mediante Capacitor.
+`npm run build` builds the app for Capacitor in `www/browser`.
 
-## Compilar para Android
+### Add the site to your iPhone Home Screen
+
+Open <https://felortiz.github.io/guess-game/> in Safari. Open the page menu, tap **Share → Add to Home Screen**, enable **Open as Web App**, and tap **Add**. If the option is not shown, scroll to the bottom of the share sheet, tap **Edit Actions**, and add **Add to Home Screen**. See [Apple's instructions](https://support.apple.com/guide/iphone/turn-a-website-into-an-app-iphea86e5236/ios).
+
+When testing in Safari through a tunnel, sounds should play after tapping **Start** and during a turn. Safari does not support `navigator.vibrate`, so vibration can only be tested in the iOS app installed through Xcode and Capacitor.
+
+## Build for Android
+
 ```bash
 npm install
 npm run build
-npx cap add android
+npx cap add android  # Run once when adding the Android platform
 npx cap sync android
 npx cap open android
 ```
-En Android Studio, ejecuta en un dispositivo o genera APK/AAB. Las compilaciones siguientes requieren `npm run sync`.
 
-## Compilar para iPhone
-En un **Mac** con Xcode:
+In Android Studio, run the app on a device or create an APK/AAB. For later builds, run `npm run sync` to rebuild the web app and sync the native projects.
+
+## Build for iOS
+
+On a Mac with Xcode:
+
 ```bash
 npm install
 npm run build
-npx cap add ios
+npx cap add ios  # Run once when adding the iOS platform
 npx cap sync ios
 npx cap open ios
 ```
-En Xcode selecciona tu equipo de firma y dispositivo; compila y ejecuta. Para publicar se necesita cuenta Apple Developer.
 
-## Datos y banderas
-Las banderas se calculan de `nationality` usando coincidencias de países. Cuando la nacionalidad es ficticia, compuesta o no está reconocida, se muestra 🌐 y se conserva el texto del Excel. Puedes ampliar la tabla de banderas en `src/app/app.component.ts`.
+In Xcode, select your signing team and device, then build and run. An Apple Developer account is required for distribution.
 
-## Personalización
-- Colores y etiquetas: `CATEGORY_DATA` en `src/app/app.component.ts`.
-- Diseño: `src/app/app.component.scss`.
-- Personajes: `src/assets/character.json` (claves `id`, `name`, `category`, `nationality`, `birthday`, `gender` e `isAlive`). `birthday` usa `YYYY-MM-DD` o `null` si no hay fecha completa verificable. `isAlive` indica si la persona o el personaje está vivo.
+## Character data and photos
 
-> Este ZIP es **código fuente listo para compilar**, no un APK ni un IPA firmado. Las fechas completas se contrastaron con Wikidata; las fechas inciertas o no aplicables se dejaron en `null`.
+Each character in `src/assets/character.json` has a numeric `category_id` from 1 to 8. Photos are stored under the matching folder, with a local number from 1 to 50; for example, `src/assets/photos/1/1.jpg`. The app calculates the local photo number from the character's position in its category. If a photo is missing, the card displays the character's name as usual.
+
+Photo attribution is recorded in `src/assets/photos/sources.json`. Category colors and labels are defined by `CATEGORY_DATA` in `src/app/app.component.ts`. Card and screen styles are in `src/app/app.component.scss`.
+
+## Source package
+
+This repository contains source code ready to build; it does not include a signed APK or IPA. Character `birthday` values use `YYYY-MM-DD` or `null` when no complete date is available. `isAlive` indicates whether the person or character is alive.

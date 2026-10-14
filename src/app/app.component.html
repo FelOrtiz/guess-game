@@ -3,13 +3,12 @@
   <ng-container *ngIf="loading"><div class="loading"><ion-spinner name="crescent"></ion-spinner><p>{{tr("Cargando personajes...")}}</p></div></ng-container>
   <ng-container *ngIf="!loading">
    <header class="topbar">
-    <button class="icon-button back" *ngIf="view !== 'home' && view !== 'scoring' && view !== 'finished'" (click)="requestHome()" [attr.aria-label]="view==='characterPreview' ? tr('Volver a la lista') : view==='categoryCards' ? tr('Volver a categorías') : tr('Volver al inicio')"><ion-icon name="arrow-back"></ion-icon></button>
+    <button class="icon-button back" *ngIf="view !== 'home' && view !== 'scoring' && view !== 'finished'" (click)="requestHome()" [attr.aria-label]="view==='characterPreview' ? tr('Volver a la lista') : view==='categoryCards' ? tr('Volver a categorías') : tr('Volver al inicio')"><ion-icon *ngIf="view==='characterPreview'||view==='categoryCards'||view==='settings'||view==='setup';else homeExitIcon" name="arrow-back" aria-hidden="true"></ion-icon><ng-template #homeExitIcon><img class="home-exit-icon" src="assets/exit-door.svg" alt="" aria-hidden="true" /></ng-template></button>
+    <button class="icon-button back" *ngIf="view === 'scoring'" (click)="closeScoring()" [attr.aria-label]="tr('Cerrar sin guardar')"><ion-icon name="arrow-back" aria-hidden="true"></ion-icon></button>
     <div class="top-placeholder" *ngIf="view === 'home' || view === 'finished'"></div>
-    <div class="top-placeholder" *ngIf="view === 'scoring'"></div>
     <div class="brand"><span class="brand-icon">✦</span> {{tr("ADIVINA")}}<span class="brand-light">{{tr("QUIÉN")}}</span></div>
-    <button class="icon-button" *ngIf="view === 'game'" (click)="reroll()" [attr.aria-label]="tr('Cambiar personaje y reiniciar turno')"><ion-icon name="refresh"></ion-icon></button>
-    <button class="icon-button" *ngIf="view === 'scoring'" (click)="closeScoring()" [attr.aria-label]="tr('Cerrar sin guardar')"><ion-icon name="close"></ion-icon></button>
-    <div class="top-placeholder" *ngIf="view !== 'game' && view !== 'scoring'"></div>
+    <button class="icon-button" *ngIf="view === 'game'" (click)="reroll()" [attr.aria-label]="tr('Cambiar personaje y reiniciar turno')"><ion-icon name="dice-outline"></ion-icon></button>
+    <div class="top-placeholder" *ngIf="view !== 'game'"></div>
    </header>
    <ng-template #cardFront let-person let-age="age" let-timer="timer" let-preview="preview">
     <img *ngIf="!photoMissing(person)" class="character-photo" [class.photo-loaded]="hasCharacterPhoto(person)" [src]="photoPath(person)" [alt]="tr('Retrato de')+' '+person.name" decoding="async" draggable="false" (load)="markPhotoAvailable(person.id)" (error)="markPhotoMissing(person.id)" />
@@ -28,7 +27,7 @@
     <h1>{{tr("¿QUIÉN")}}<br/><em>{{tr("SOY?")}}</em></h1>
     <p class="tagline">{{characters.length}} {{tr('personajes')}}. {{categories.length}} {{categories.length===1 ? tr('categoría') : tr('categorías')}}.<br/>{{tr("Infinitas preguntas para adivinar.")}}</p>
     <div class="home-actions">
-     <button class="primary-button" (click)="openSetup()"><ion-icon name="play"></ion-icon> {{tr("NUEVO JUEGO")}} <span class="button-arrow">↗</span></button>
+     <button class="primary-button" (click)="openSetup()"><ion-icon name="play"></ion-icon> {{tr("NUEVO JUEGO")}}</button>
      <button class="secondary-button" (click)="openSettings()"><ion-icon name="settings-outline"></ion-icon> {{tr("CONFIGURAR")}}</button>
     </div>
     <div class="home-stats"><div><strong>{{availableCount}}</strong><small>{{tr("PERSONAJES DISPONIBLES")}}</small></div><div class="stat-line"></div><div><strong>{{categoryCount}}</strong><small>{{tr("CATEGORÍAS ACTIVAS")}}</small></div></div>
@@ -36,29 +35,30 @@
    </main>
    <main *ngIf="view==='setup'" class="settings game-setup fade">
     <div class="section-kicker">{{tr('PREPARA TU PARTIDA')}}</div>
-    <h1>{{tr('Nuevo')}}<br/><em>{{tr('juego')}}</em></h1>
     <p>{{tr('Necesitas al menos 2 jugadores y 1 categoría activa para empezar.')}}</p>
-    <div class="setup-progress" aria-live="polite">
-     <span [class.complete]="playerNames.length>=2">{{playerNames.length>=2 ? '✓' : '1'}} {{tr('JUGADORES')}} ({{playerNames.length}}/2)</span>
-     <span [class.complete]="categoryCount>0 && availableCount>0">{{categoryCount>0 && availableCount>0 ? '✓' : '2'}} {{tr('CATEGORÍAS')}} ({{categoryCount}}/1)</span>
+    <div class="setup-progress" role="tablist" [attr.aria-label]="tr('Secciones de preparación')" aria-live="polite">
+     <button type="button" role="tab" [class.active]="setupStep==='players'" [attr.aria-selected]="setupStep==='players'" (click)="selectSetupStep('players')"><span class="setup-tab-status" [class.is-valid]="playerNames.length>=2" [class.is-invalid]="playerNames.length<2" aria-hidden="true">{{playerNames.length>=2 ? '✓' : '×'}}</span><span>{{tr('JUGADORES')}} <small>{{playerNames.length}}/2</small></span></button>
+     <button type="button" role="tab" [class.active]="setupStep==='categories'" [attr.aria-selected]="setupStep==='categories'" (click)="selectSetupStep('categories')"><span class="setup-tab-status" [class.is-valid]="categoryCount>0 && availableCount>0" [class.is-invalid]="categoryCount===0 || availableCount===0" aria-hidden="true">{{categoryCount>0 && availableCount>0 ? '✓' : '×'}}</span><span>{{tr('CATEGORÍAS')}} <small>{{categoryCount>0 && availableCount>0 ? 1 : 0}}/1</small></span></button>
     </div>
     <ng-container *ngIf="setupStep==='players'">
-     <section class="settings-section"><h2>{{tr('Jugadores')}}</h2><p>{{tr('El orden de esta lista será el orden de los turnos.')}}</p>
-      <form class="add-player" (ngSubmit)="addPlayer()"><input name="setupPlayerName" [ngModel]="newPlayerName" (ngModelChange)="onPlayerNameChange($event)" pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]*" maxlength="30" [attr.placeholder]="tr('Nombre del jugador')" [attr.aria-label]="tr('Nombre del jugador')"/><button type="submit">{{tr('AGREGAR')}}</button></form>
-      <p class="player-name-error" *ngIf="playerNameError" role="alert">{{playerNameError}}</p>
-      <div class="player-list"><div class="player-row" *ngFor="let name of playerNames;let i=index"><span class="player-position">{{i+1}}</span><strong>{{name}}</strong><button (click)="movePlayer(i,-1)" [disabled]="i===0" [attr.aria-label]="tr('Subir a')+' '+name">↑</button><button (click)="movePlayer(i,1)" [disabled]="i===playerNames.length-1" [attr.aria-label]="tr('Bajar a')+' '+name">↓</button><button (click)="removePlayer(i)" [attr.aria-label]="tr('Quitar a')+' '+name">×</button></div></div>
-     </section>
-     <p class="setup-requirement" *ngIf="playerNames.length<2" role="status">{{tr('Agrega al menos dos jugadores para continuar.')}}</p>
+     <div class="setup-content">
+      <section class="settings-section"><p>{{tr('El orden de esta lista será el orden de los turnos.')}}</p>
+       <form class="add-player" (ngSubmit)="addPlayer()"><input name="setupPlayerName" [ngModel]="newPlayerName" (ngModelChange)="onPlayerNameChange($event)" pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]*" maxlength="30" [attr.placeholder]="tr('Nombre del jugador')" [attr.aria-label]="tr('Nombre del jugador')"/><button type="submit">{{tr('AGREGAR')}}</button></form>
+       <p class="player-name-error" *ngIf="playerNameError" role="alert">{{playerNameError}}</p>
+       <div class="player-list"><div class="player-row" *ngFor="let name of playerNames;let i=index"><span class="player-position">{{i+1}}</span><strong>{{name}}</strong><button (click)="movePlayer(i,-1)" [disabled]="i===0" [attr.aria-label]="tr('Subir a')+' '+name">↑</button><button (click)="movePlayer(i,1)" [disabled]="i===playerNames.length-1" [attr.aria-label]="tr('Bajar a')+' '+name">↓</button><button (click)="removePlayer(i)" [attr.aria-label]="tr('Quitar a')+' '+name">×</button></div></div>
+      </section>
+     </div>
      <button type="button" class="primary-button setup-next" (click)="nextSetupStep()" [disabled]="playerNames.length<2">{{canStart ? tr('EMPEZAR PARTIDA') : tr('SIGUIENTE')}} <span aria-hidden="true">↗</span></button>
     </ng-container>
     <ng-container *ngIf="setupStep==='categories'">
-     <section class="settings-section"><h2>{{tr('Categorías')}}</h2><p>{{tr('Elige qué personajes pueden aparecer durante el juego.')}}</p>
-      <div class="settings-head"><strong>{{categoryCount}} {{tr('de')}} {{categories.length}} {{tr('activas')}}</strong><div class="category-actions"><button type="button" (click)="selectAll()" [disabled]="categoryCount===categories.length">{{tr('Seleccionar todas')}}</button><button type="button" (click)="deselectAll()" [disabled]="categoryCount===0">{{tr('Deseleccionar todas')}}</button></div></div>
-      <div class="category-list"><div class="category-row" *ngFor="let cat of categories"><span class="category-emoji" [style.background]="cat.light">{{cat.icon}}</span><div class="category-copy"><button type="button" class="category-name-button" (click)="openCategoryCards(cat.name)" [attr.aria-label]="tr('Ver cartas de')+' '+tr(cat.name)">{{tr(cat.name)}}</button><small>{{tr('50 personajes')}}</small></div><ion-toggle [checked]="isEnabled(cat.name)" (ionChange)="toggle(cat.name,$event.detail.checked)" [attr.aria-label]="tr(cat.name)"></ion-toggle></div></div>
-     </section>
-     <p class="setup-requirement" *ngIf="!categoryCount" role="status">{{tr('Activa al menos una categoría para empezar.')}}</p>
-     <p class="setup-requirement" *ngIf="categoryCount>0 && !availableCount" role="status">{{tr('No hay personajes disponibles en las categorías activas.')}}</p>
-     <div class="setup-actions" [class.single]="!setupStartedWithPlayers"><button *ngIf="setupStartedWithPlayers" type="button" class="secondary-button" (click)="setupStep='players'">{{tr('VOLVER A JUGADORES')}}</button><button type="button" class="primary-button" (click)="start()" [disabled]="!canStart">{{tr('EMPEZAR PARTIDA')}}</button></div>
+     <div class="setup-content">
+      <section class="settings-section"><p>{{tr('Elige qué personajes pueden aparecer durante el juego.')}}</p>
+       <div class="settings-head"><strong>{{categoryCount}} {{tr('de')}} {{categories.length}} {{tr('activas')}}</strong><div class="category-actions"><button type="button" (click)="selectAll()" [disabled]="categoryCount===categories.length">{{tr('Seleccionar todas')}}</button><button type="button" (click)="deselectAll()" [disabled]="categoryCount===0">{{tr('Deseleccionar todas')}}</button></div></div>
+       <div class="category-list"><div class="category-row" *ngFor="let cat of categories" [style.border-color]="cat.color"><div class="category-copy"><strong>{{tr(cat.name)}}</strong><small>{{tr('50 personajes')}}</small></div><ion-toggle [checked]="isEnabled(cat.name)" (ionChange)="toggle(cat.name,$event.detail.checked)" [attr.aria-label]="tr(cat.name)"></ion-toggle></div></div>
+      </section>
+      <p class="setup-requirement" *ngIf="categoryCount>0 && !availableCount" role="status">{{tr('No hay personajes disponibles en las categorías activas.')}}</p>
+     </div>
+     <div class="setup-actions single"><button type="button" class="primary-button" (click)="start()" [disabled]="!canStart">{{tr('EMPEZAR PARTIDA')}}</button></div>
     </ng-container>
    </main>
    <main *ngIf="view==='categoryCards'" class="settings character-browser fade">
@@ -155,7 +155,7 @@
      <button class="primary-button" (click)="nextRound()"><span>{{roundNumber===roundCount ? tr('VER RESULTADOS FINALES') : tr('SIGUIENTE RONDA')}}</span><span class="button-arrow" aria-hidden="true">↗</span></button>
     </div>
    </main>
-   <main *ngIf="view==='settings'" class="settings fade"><div class="section-kicker">{{tr("PERSONALIZA TU PARTIDA")}}</div><h1>{{tr("Configurar")}}<br/><em>{{tr("la partida")}}</em></h1><p>{{tr("Elige las reglas, los jugadores y las categorías antes de empezar.")}}</p>
+   <main *ngIf="view==='settings'" class="settings fade"><div class="section-kicker">{{tr("PERSONALIZA TU JUEGO")}}</div><p>{{tr("Elige las reglas, los jugadores y las categorías antes de empezar.")}}</p>
     <nav class="settings-tabs" [attr.aria-label]="tr('Secciones de configuración')">
      <button type="button" (click)="selectSettingsTab('general')" [class.active]="settingsTab==='general'" [attr.aria-pressed]="settingsTab==='general'">{{tr("GENERAL")}}</button>
      <button type="button" (click)="selectSettingsTab('players')" [class.active]="settingsTab==='players'" [attr.aria-pressed]="settingsTab==='players'">{{tr("JUGADORES")}}</button>
@@ -211,14 +211,14 @@
     </div>
     <div class="screen-actions final-actions">
      <button class="primary-button" (click)="replay()" [disabled]="!canStart"><span>{{tr("JUGAR DE NUEVO")}}</span><span class="button-arrow" aria-hidden="true">↗</span></button>
-     <button class="secondary-button" (click)="requestHome()">{{tr("VOLVER AL INICIO")}}</button>
+     <button class="secondary-button" (click)="goHome()">{{tr("VOLVER AL INICIO")}}</button>
     </div>
    </main>
   </ng-container>
  </div>
 </ion-content>
 <dialog #rerollDialog class="reroll-dialog" aria-labelledby="reroll-title" aria-describedby="reroll-description" (cancel)="$event.preventDefault();cancelReroll()">
- <div class="reroll-dialog-icon" aria-hidden="true"><ion-icon name="refresh"></ion-icon></div>
+ <div class="reroll-dialog-icon" aria-hidden="true"><ion-icon name="dice-outline"></ion-icon></div>
  <h2 id="reroll-title">{{tr("¿Cambiar personaje?")}}</h2>
  <p id="reroll-description">{{tr("Se reiniciará el turno de")}} <strong>{{activePlayer?.name}}</strong> {{tr("con otro personaje y el tiempo completo.")}}</p>
  <div class="reroll-dialog-actions">
@@ -227,7 +227,7 @@
  </div>
 </dialog>
 <dialog #homeDialog class="reroll-dialog" aria-labelledby="home-dialog-title" aria-describedby="home-dialog-description" (cancel)="$event.preventDefault();cancelHome()">
- <div class="reroll-dialog-icon" aria-hidden="true"><ion-icon name="arrow-back"></ion-icon></div>
+ <div class="reroll-dialog-icon" aria-hidden="true"><img src="assets/exit-door.svg" alt="" /></div>
  <h2 id="home-dialog-title">{{tr("¿Volver al inicio?")}}</h2>
  <p id="home-dialog-description">{{tr("Si sales ahora, perderás el progreso de la partida actual.")}}</p>
  <div class="reroll-dialog-actions">

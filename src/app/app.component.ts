@@ -8,7 +8,7 @@ import { Preferences } from '@capacitor/preferences';
 import { IonApp, IonContent, IonIcon, IonToggle, IonSpinner } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { tr } from './i18n';
-import { arrowBack, checkmark, close, refresh, settingsOutline, play, pause, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline, phonePortraitOutline } from 'ionicons/icons';
+import { arrowBack, checkmark, close, refresh, diceOutline, settingsOutline, play, pause, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline, phonePortraitOutline } from 'ionicons/icons';
 
 type View = 'home' | 'setup' | 'game' | 'scoring' | 'between' | 'timeout' | 'roundResult' | 'settings' | 'categoryCards' | 'characterPreview' | 'finished';
 type SetupStep = 'players' | 'categories';
@@ -92,7 +92,7 @@ export class AppComponent implements OnInit, OnDestroy {
  bonusEnabled=true;cluePenaltyEnabled=true;
  soundEnabled=true;vibrationEnabled=true;
  showFinalRanking=false;
- constructor(){addIcons({arrowBack,checkmark,close,refresh,settingsOutline,play,pause,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline,phonePortraitOutline});}
+ constructor(){addIcons({arrowBack,checkmark,close,refresh,diceOutline,settingsOutline,play,pause,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline,phonePortraitOutline});}
  async ngOnInit():Promise<void>{
   await this.restoreSettings();
   this.http.get<Character[]>('assets/character.json').subscribe({next:(people)=>{this.characters=people;this.loading=false;},error:()=>{this.loading=false;this.error=tr('No se pudo cargar el listado de personajes.');}});
@@ -363,6 +363,11 @@ export class AppComponent implements OnInit, OnDestroy {
   if(this.playerNames.length<2)return;
   if(this.canStart)this.beginNewGame();
   else this.setupStep='categories';
+ }
+ selectSetupStep(step:SetupStep):void{
+  if(this.setupStep===step)return;
+  this.playSettingsSelection();
+  this.setupStep=step;
  }
  start():void{
   if(this.view!=='setup'||this.setupStep!=='categories'||!this.canStart)return;

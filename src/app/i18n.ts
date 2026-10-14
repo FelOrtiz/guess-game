@@ -59,7 +59,7 @@ const messages: Record<string,string> = {
  "errores": $localize`:@@s56:errores`,
  "VER RESULTADOS FINALES": $localize`:@@s57:VER RESULTADOS FINALES`,
  "SIGUIENTE RONDA": $localize`:@@s58:SIGUIENTE RONDA`,
- "PERSONALIZA TU PARTIDA": $localize`:@@s59:PERSONALIZA TU PARTIDA`,
+ "PERSONALIZA TU JUEGO": $localize`:@@s59:PERSONALIZA TU JUEGO`,
  "Configurar": $localize`:@@s60:Configurar`,
  "la partida": $localize`:@@s61:la partida`,
  "Elige las reglas, los jugadores y las categorías antes de empezar.": $localize`:@@s62:Elige las reglas, los jugadores y las categorías antes de empezar.`,

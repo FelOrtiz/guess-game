@@ -54,6 +54,7 @@ export class AppComponent implements OnInit, OnDestroy {
  private scoringPlayerIndex=0;
  private previewTouchStart:{x:number;y:number}|null=null;
  private previewImageRequest=0;
+ private photoStatuses=new Map<number,boolean>();
  correctingExpiredTurn=false;
  private scoreReturnView:View='between';
  readonly categories=CATEGORY_DATA;
@@ -164,6 +165,10 @@ export class AppComponent implements OnInit, OnDestroy {
  get answered():number{return this.players.reduce((total,player)=>total+player.correct+player.errors,0);}
  get category():Category|undefined{return this.categories.find(c=>c.name===this.current?.category);}
  categoryFor(person:Character):Category|undefined{return this.categories.find(c=>c.name===person.category);}
+ hasCharacterPhoto(person:Character):boolean{return this.photoStatuses.get(person.id)===true;}
+ photoMissing(person:Character):boolean{return this.photoStatuses.get(person.id)===false;}
+ markPhotoAvailable(id:number):void{this.photoStatuses.set(id,true);}
+ markPhotoMissing(id:number):void{this.photoStatuses.set(id,false);}
  get categoryCharacters():Character[]{
   const people=this.characters.filter(person=>person.category===this.selectedCategoryName);
   return people.sort(this.characterSort==='id'?(a,b)=>a.id-b.id:(a,b)=>a.name.localeCompare(b.name,this.language));
@@ -290,7 +295,7 @@ export class AppComponent implements OnInit, OnDestroy {
   const index=people.findIndex(person=>person.id===this.previewCharacter?.id);
   if(index<0||people.length<2)return;
   const next=people[(index+direction+people.length)%people.length];
-  if(next.category!=='Actores de Hollywood'){this.previewCharacter=next;return;}
+  if(this.photoMissing(next)){this.previewCharacter=next;return;}
   this.previewLoading=true;
   const request=++this.previewImageRequest;
   const image=new Image();
@@ -299,8 +304,12 @@ export class AppComponent implements OnInit, OnDestroy {
    this.previewCharacter=next;
    this.previewLoading=false;
   };
-  image.onload=()=>{void image.decode().then(show,show);};
-  image.onerror=show;
+  image.onload=()=>{
+   this.markPhotoAvailable(next.id);
+   if(typeof image.decode==='function')void image.decode().then(show,show);
+   else show();
+  };
+  image.onerror=()=>{this.markPhotoMissing(next.id);show();};
   image.src=`assets/photos/${next.id}.jpg`;
  }
  onPreviewTouchStart(event:TouchEvent):void{

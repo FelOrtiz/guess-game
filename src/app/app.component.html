@@ -12,7 +12,7 @@
     <div class="top-placeholder" *ngIf="view !== 'game' && view !== 'scoring'"></div>
    </header>
    <ng-template #cardFront let-person let-age="age" let-timer="timer" let-preview="preview">
-    <img *ngIf="person.category==='Actores de Hollywood'" class="character-photo" [src]="'assets/photos/'+person.id+'.jpg'" [alt]="tr('Retrato de')+' '+person.name" decoding="async" draggable="false" />
+    <img *ngIf="!photoMissing(person)" class="character-photo" [class.photo-loaded]="hasCharacterPhoto(person)" [src]="'assets/photos/'+person.id+'.jpg'" [alt]="tr('Retrato de')+' '+person.name" decoding="async" draggable="false" (load)="markPhotoAvailable(person.id)" (error)="markPhotoMissing(person.id)" />
     <div class="card-top"><div class="flag-pill card-panel" [attr.aria-label]="countryLabelFor(person)"><span class="flag">{{flagFor(person)}}</span><span class="country">{{countryLabelFor(person)}}</span></div><div class="character-meta card-panel" [attr.aria-label]="age !== null ? (person.isAlive ? age + ' ' + tr('años') + ', ' + tr('vivo') : tr('Murió a los') + ' ' + age + ' ' + tr('años')) : (person.isAlive ? tr('vivo') : tr('fallecido'))"><span *ngIf="age !== null">{{age}} {{tr('años')}}</span><span aria-hidden="true">{{person.isAlive ? '❤️' : '💀'}}</span></div></div>
     <div class="card-center"><h2>{{person.name}}</h2></div>
     <div class="card-bottom" [class.preview-card-bottom]="preview">
@@ -72,7 +72,7 @@
    </main>
    <main *ngIf="view==='characterPreview' && previewCharacter" class="game card-preview-screen fade" (touchstart)="onPreviewTouchStart($event)" (touchend)="onPreviewTouchEnd($event)" (touchcancel)="cancelPreviewSwipe()">
     <div class="preview-heading"><span class="section-kicker">{{tr('VISTA PREVIA DE CARTA')}}</span><span>#{{previewCharacter.id}}</span></div>
-    <section class="character-card" [class.has-photo]="previewCharacter.category==='Actores de Hollywood'" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [style.--accent]="categoryFor(previewCharacter)?.color" [style.--accent-muted]="categoryFor(previewCharacter)?.light" [attr.aria-label]="tr('Vista previa')+' '+previewCharacter.name" (contextmenu)="$event.preventDefault()" (dragstart)="$event.preventDefault()">
+    <section class="character-card" [class.has-photo]="hasCharacterPhoto(previewCharacter)" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [style.--accent]="categoryFor(previewCharacter)?.color" [style.--accent-muted]="categoryFor(previewCharacter)?.light" [attr.aria-label]="tr('Vista previa')+' '+previewCharacter.name" (contextmenu)="$event.preventDefault()" (dragstart)="$event.preventDefault()">
      <div class="card-face card-front"><ng-container *ngTemplateOutlet="cardFront;context:{$implicit:previewCharacter,age:characterAgeFor(previewCharacter),timer:null,preview:true}"></ng-container></div>
      <div *ngIf="previewLoading" class="preview-loading" role="status" [attr.aria-label]="tr('Cargando carta...')"><ion-spinner name="crescent" aria-hidden="true"></ion-spinner></div>
     </section>
@@ -80,7 +80,7 @@
    <main *ngIf="view==='game' && current" class="game fade">
     <div class="game-meta"><span>{{tr("RONDA")}} {{roundNumber}} {{tr("DE")}} {{roundCount}}</span><strong class="game-player">{{activePlayer?.name}}</strong><span>{{tr("TURNO")}} {{playerIndex+1}} {{tr("DE")}} {{players.length}}</span></div>
     <div class="progress"><span [style.width.%]="progress"></span></div>
-    <section class="character-card" [class.has-photo]="current.category==='Actores de Hollywood'" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [class.flipped]="cardFlipped" [class.time-low]="cardFlipped && turnTimerRunning && timeLeft<=10" [style.--accent]="category?.color" [style.--accent-muted]="category?.light" [style.--time-progress]="(timeLeft / turnDuration * 100) + '%'" role="button" tabindex="0" [attr.aria-label]="cardFlipped ? tr('Mostrar personaje y pausar tiempo') : (hasTurnStarted ? tr('Ocultar personaje y reanudar tiempo') : tr('Ocultar personaje e iniciar tiempo'))" [attr.aria-pressed]="cardFlipped" (click)="flipCard()" (keydown.enter)="flipCard()" (keydown.space)="$event.preventDefault();flipCard()">
+    <section class="character-card" [class.has-photo]="hasCharacterPhoto(current)" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [class.flipped]="cardFlipped" [class.time-low]="cardFlipped && turnTimerRunning && timeLeft<=10" [style.--accent]="category?.color" [style.--accent-muted]="category?.light" [style.--time-progress]="(timeLeft / turnDuration * 100) + '%'" role="button" tabindex="0" [attr.aria-label]="cardFlipped ? tr('Mostrar personaje y pausar tiempo') : (hasTurnStarted ? tr('Ocultar personaje y reanudar tiempo') : tr('Ocultar personaje e iniciar tiempo'))" [attr.aria-pressed]="cardFlipped" (click)="flipCard()" (keydown.enter)="flipCard()" (keydown.space)="$event.preventDefault();flipCard()">
      <div class="card-rotator">
       <div class="card-face card-front" [attr.aria-hidden]="cardFlipped"><ng-container *ngTemplateOutlet="cardFront;context:{$implicit:current,age:characterAge,timer:formattedTime}"></ng-container></div>
       <div class="card-face card-back" [attr.aria-hidden]="!cardFlipped">
@@ -97,9 +97,9 @@
     <div class="section-kicker">{{tr("TIEMPO AGOTADO")}}</div>
     <h1>{{tr("¡Qué")}} <em>{{tr("lástima!")}}</em></h1>
     <p>{{tr("No lograste adivinar el personaje.")}}</p>
-    <section class="character-card timeout-character-card" [class.has-photo]="current.category==='Actores de Hollywood'" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [style.--accent]="category?.color" [style.--accent-muted]="category?.light" [attr.aria-label]="tr('El personaje era')+' '+current.name">
+    <section class="character-card timeout-character-card" [class.has-photo]="hasCharacterPhoto(current)" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [style.--accent]="category?.color" [style.--accent-muted]="category?.light" [attr.aria-label]="tr('El personaje era')+' '+current.name">
      <div class="card-face card-front">
-      <img *ngIf="current.category==='Actores de Hollywood'" class="character-photo" [src]="'assets/photos/'+current.id+'.jpg'" [alt]="tr('Retrato de')+' '+current.name" decoding="async" />
+      <img *ngIf="!photoMissing(current)" class="character-photo" [class.photo-loaded]="hasCharacterPhoto(current)" [src]="'assets/photos/'+current.id+'.jpg'" [alt]="tr('Retrato de')+' '+current.name" decoding="async" (load)="markPhotoAvailable(current.id)" (error)="markPhotoMissing(current.id)" />
       <div class="card-top"><div class="flag-pill card-panel"><span class="flag">{{flag}}</span><span class="country">{{countryLabel}}</span></div></div>
       <div class="card-center"><h2>{{current.name}}</h2></div>
       <div class="card-bottom"><span class="category-pill card-panel">{{category?.icon}} {{tr(current.category)}}</span></div>

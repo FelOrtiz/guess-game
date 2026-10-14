@@ -23,7 +23,8 @@
 .character-meta{gap:7px;flex-shrink:0;white-space:nowrap}
 .character-meta span:last-child{font-size:19px;line-height:1}
 .character-card.has-photo:before{display:none}
-.character-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 28%;z-index:0}
+.character-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 28%;z-index:0;opacity:0;transition:opacity .16s ease-out}
+.character-photo.photo-loaded{opacity:1}
 .character-card.has-photo:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#0b102680 0%,transparent 34%,#0b102633 55%,#0b1026e8 100%);pointer-events:none;z-index:0}
 .character-card.has-photo .card-top,.character-card.has-photo .card-center,.character-card.has-photo .card-bottom{position:relative;z-index:1}
 .character-card.has-photo .card-center{margin-top:auto;padding-bottom:8px}

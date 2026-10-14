@@ -20,6 +20,7 @@
 .card-top{gap:10px}
 .card-top .flag-pill{flex:1;min-width:0;max-width:none}
 .card-top .country{min-width:0}
+.card-top .flag-pill,.card-top .character-meta{height:48px;min-height:48px;box-sizing:border-box;font-family:inherit;font-size:13px;line-height:1.2}
 .character-meta{gap:7px;flex-shrink:0;white-space:nowrap}
 .character-meta span:last-child{font-size:19px;line-height:1}
 .character-card.has-photo:before{display:none}
@@ -252,3 +253,4 @@
 .between-actions{align-self:stretch}
 .timeout-continue{margin-top:auto}
 .home,.between,.scoring,.round-result,.timeout-screen,.final-screen{padding-bottom:0}
+@media(max-width:400px) and (max-height:700px){.game .character-card{flex:1 1 0;min-height:0;height:auto;aspect-ratio:auto;margin:12px 0}}

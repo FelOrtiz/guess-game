@@ -132,7 +132,7 @@
 .current-standing>span{font-size:10px;font-weight:900;letter-spacing:.8px;color:#a8b2d3}
 .current-standing strong{color:var(--ui-accent);font-size:15px}
 .current-standing strong small{color:#a8b2d3;font-size:11px;font-weight:700}
-.game .character-card{max-height:none;margin-bottom:0}
+.game .character-card{max-height:none;margin-top:auto;margin-bottom:auto}
 .game-actions{display:flex;align-items:stretch;gap:10px;width:100%}
 .card-back-actions{position:absolute;right:18px;bottom:18px;left:18px;z-index:1;width:auto}
 .game .score-button{flex:1;width:auto;min-height:60px}
@@ -161,7 +161,7 @@
 .timeout-screen>p{margin:0;color:#b0b8d2;font-size:14px;line-height:1.5}
 .timeout-character-card{flex:1;width:100%;min-height:335px;max-height:600px;margin:8px 0}
 .timeout-continue{width:100%;flex-shrink:0}
-.timeout-character-card .card-center{margin-top:auto;margin-bottom:auto}
+.timeout-character-card .card-center{margin-top:auto;margin-bottom:0;padding-bottom:8px}
 @media(prefers-reduced-motion:reduce){.card-rotator,.card-front,.card-back{transition:none}}
 @media(max-height:720px){.between{gap:12px;padding:8px 0}.between-symbol{width:88px;height:88px;border-radius:24px;font-size:72px;margin-bottom:4px}.between p{margin-bottom:4px;line-height:1.4}.between-stats>div{min-height:72px}}
 .score-incorrect{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:60px;border:1px solid #ff849d;border-radius:17px;background:#422638;color:#ff9eb3;font-size:12px;font-weight:900;letter-spacing:.5px}
@@ -243,3 +243,5 @@
 .preview-nav-button:disabled{opacity:.5;cursor:default}
 .preview-loading{position:absolute;inset:0;z-index:3;display:grid;place-items:center;background:#10182cbb;pointer-events:none}
 .preview-loading ion-spinner{width:46px;height:46px;color:var(--accent)}
+.character-card{width:100%;height:auto;min-height:0;max-height:none;aspect-ratio:9 / 16;flex:0 0 auto}
+.timeout-character-card{flex:1 1 auto;min-height:0;aspect-ratio:auto}

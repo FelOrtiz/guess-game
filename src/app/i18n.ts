@@ -266,5 +266,6 @@ const messages: Record<string,string> = {
  "Personaje anterior": $localize`:@@s263:Personaje anterior`,
  "Personaje siguiente": $localize`:@@s264:Personaje siguiente`,
  "Cargando carta...": $localize`:@@s265:Cargando carta...`,
+ "Ya existe un jugador con ese nombre.": $localize`:@@s266:Ya existe un jugador con ese nombre.`,
 };
 export function tr(source: string): string { return messages[source] ?? source; }

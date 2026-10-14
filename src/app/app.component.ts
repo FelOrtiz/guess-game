@@ -15,7 +15,7 @@ type SetupStep = 'players' | 'categories';
 type SettingsTab = 'general' | 'others' | 'players' | 'categories';
 type AccentId = 'green' | 'blue' | 'red' | 'yellow' | 'orange';
 type CharacterNameSize = 'normal' | 'large' | 'huge';
-type SoundKind = 'beep' | 'midpoint' | 'success' | 'error' | 'flip' | 'gear' | 'save' | 'timerToggle' | 'celebration' | 'newGame';
+type SoundKind = 'beep' | 'midpoint' | 'success' | 'error' | 'flip' | 'gear' | 'save' | 'timerToggle' | 'celebration' | 'newGame' | 'dice' | 'trash' | 'switchOn' | 'switchOff' | 'tabChange';
 interface Player {name:string;score:number;roundScore:number;correct:number;errors:number;}
 interface Character {id:number;name:string;category:string;franchise?:string;nationality:string;birthday:string|null;deathDate:string|null;gender:string;isAlive:boolean;}
 interface Category {name:string;color:string;light:string;icon:string;}
@@ -86,7 +86,7 @@ export class AppComponent implements OnInit, OnDestroy {
  previewCharacter:Character|null=null;
  previewLoading=false;
  current:Character|null=null; cardFlipped=false; hasTurnStarted=false; remaining:number[]=[]; skipped=0;loading=true;error=''; countdown=0;
- playerNames:string[]=[];newPlayerName='';roundCount=3;turnDuration=60;revealDelay=5;
+ playerNames:string[]=[];newPlayerName='';playerNameError='';roundCount=3;turnDuration=60;revealDelay=5;
  players:Player[]=[];roundNumber=1;playerIndex=0;timeLeft=0;
  bonusScore=1;bonusQuestions=3;baseScore=2;cluePenalty=-1;
  bonusEnabled=true;cluePenaltyEnabled=true;
@@ -211,53 +211,75 @@ export class AppComponent implements OnInit, OnDestroy {
  countryLabelFor(person:Character):string{return tr(person.nationality||'No especificada');}
  isEnabled(name:string):boolean{return this.enabled.includes(name);}
  toggle(name:string,on:boolean):void{
+  if(this.enabled.includes(name)===on)return;
+  this.playToggleSound(on);
   if(on){if(!this.enabled.includes(name))this.enabled=[...this.enabled,name];}
   else this.enabled=this.enabled.filter(c=>c!==name);
   this.saveSetting('adivina.categories',JSON.stringify(this.enabled));
  }
- selectAll():void{this.enabled=[...this.allCategoryNames];this.saveSetting('adivina.categories',JSON.stringify(this.enabled));}
- deselectAll():void{this.enabled=[];this.saveSetting('adivina.categories',JSON.stringify(this.enabled));}
+ selectAll():void{if(this.categoryCount===this.allCategoryNames.length)return;this.playSettingsSelection();this.enabled=[...this.allCategoryNames];this.saveSetting('adivina.categories',JSON.stringify(this.enabled));}
+ deselectAll():void{if(this.categoryCount===0)return;this.playSettingsSelection();this.enabled=[];this.saveSetting('adivina.categories',JSON.stringify(this.enabled));}
+ onPlayerNameChange(value:string):void{
+  const sanitized=value.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]/g,'').replace(/ {2,}/g,' ').replace(/^ +/,'');
+  this.newPlayerName=sanitized.split(' ').map(word=>word?word[0].toLocaleUpperCase('es')+word.slice(1):'').join(' ');
+  this.playerNameError='';
+ }
  addPlayer():void{
+  this.onPlayerNameChange(this.newPlayerName);
   const name=this.newPlayerName.trim();if(!name)return;
+  const duplicateKey=this.normalizePlayerName(name);
+  if(this.playerNames.some(player=>this.normalizePlayerName(player)===duplicateKey)){
+   this.playerNameError=this.tr('Ya existe un jugador con ese nombre.');
+   return;
+  }
+  this.playerNameError='';
   this.playerNames=[...this.playerNames,name];this.newPlayerName='';this.savePlayers();
  }
- removePlayer(index:number):void{this.playerNames=this.playerNames.filter((_,i)=>i!==index);this.savePlayers();}
+ private normalizePlayerName(name:string):string{return name.trim().replace(/\s+/g,' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es');}
+ removePlayer(index:number):void{this.playerNames=this.playerNames.filter((_,i)=>i!==index);this.savePlayers('trash');}
  movePlayer(index:number,direction:number):void{
   const target=index+direction;if(target<0||target>=this.playerNames.length)return;
   [this.playerNames[index],this.playerNames[target]]=[this.playerNames[target],this.playerNames[index]];
   this.playerNames=[...this.playerNames];this.savePlayers();
  }
- private savePlayers():void{
+ private savePlayers(sound:'save'|'trash'='save'):void{
   this.saveSetting('adivina.players',JSON.stringify(this.playerNames));
-  this.prepareAudio();this.playSound('save');
+  this.prepareAudio();this.playSound(sound);
  }
- setRounds(value:number):void{if(this.roundOptions.includes(value)){this.roundCount=value;this.saveSetting('adivina.rounds',String(value));}}
- setDuration(value:number):void{if(this.timeOptions.includes(value)){this.turnDuration=value;this.saveSetting('adivina.duration',String(value));}}
- setRevealDelay(value:number):void{if(this.revealDelayOptions.includes(value)){this.revealDelay=value;this.saveSetting('adivina.revealDelay',String(value));}}
- setBonusScore(value:number):void{if(this.bonusScoreOptions.includes(value)){this.bonusScore=value;this.saveSetting('adivina.bonusScore',String(value));}}
- setBonusEnabled(enabled:boolean):void{this.bonusEnabled=enabled;this.saveSetting('adivina.bonusEnabled',String(enabled));}
- setBonusQuestions(value:number):void{if(this.bonusQuestionOptions.includes(value)){this.bonusQuestions=value;this.saveSetting('adivina.bonusQuestions',String(value));}}
- setBaseScore(value:number):void{if(this.baseScoreOptions.includes(value)){this.baseScore=value;this.saveSetting('adivina.baseScore',String(value));}}
- setCluePenalty(value:number):void{if(this.cluePenaltyOptions.includes(value)){this.cluePenalty=value;this.saveSetting('adivina.cluePenalty',String(value));}}
- setCluePenaltyEnabled(enabled:boolean):void{this.cluePenaltyEnabled=enabled;this.saveSetting('adivina.cluePenaltyEnabled',String(enabled));}
+ setRounds(value:number):void{if(this.roundOptions.includes(value)&&this.roundCount!==value){this.playSettingsSelection();this.roundCount=value;this.saveSetting('adivina.rounds',String(value));}}
+ setDuration(value:number):void{if(this.timeOptions.includes(value)&&this.turnDuration!==value){this.playSettingsSelection();this.turnDuration=value;this.saveSetting('adivina.duration',String(value));}}
+ setRevealDelay(value:number):void{if(this.revealDelayOptions.includes(value)&&this.revealDelay!==value){this.playSettingsSelection();this.revealDelay=value;this.saveSetting('adivina.revealDelay',String(value));}}
+ setBonusScore(value:number):void{if(this.bonusScoreOptions.includes(value)&&this.bonusScore!==value){this.playSettingsSelection();this.bonusScore=value;this.saveSetting('adivina.bonusScore',String(value));}}
+ setBonusEnabled(enabled:boolean):void{if(this.bonusEnabled===enabled)return;this.playToggleSound(enabled);this.bonusEnabled=enabled;this.saveSetting('adivina.bonusEnabled',String(enabled));}
+ setBonusQuestions(value:number):void{if(this.bonusQuestionOptions.includes(value)&&this.bonusQuestions!==value){this.playSettingsSelection();this.bonusQuestions=value;this.saveSetting('adivina.bonusQuestions',String(value));}}
+ setBaseScore(value:number):void{if(this.baseScoreOptions.includes(value)&&this.baseScore!==value){this.playSettingsSelection();this.baseScore=value;this.saveSetting('adivina.baseScore',String(value));}}
+ setCluePenalty(value:number):void{if(this.cluePenaltyOptions.includes(value)&&this.cluePenalty!==value){this.playSettingsSelection();this.cluePenalty=value;this.saveSetting('adivina.cluePenalty',String(value));}}
+ setCluePenaltyEnabled(enabled:boolean):void{if(this.cluePenaltyEnabled===enabled)return;this.playToggleSound(enabled);this.cluePenaltyEnabled=enabled;this.saveSetting('adivina.cluePenaltyEnabled',String(enabled));}
  setSoundEnabled(enabled:boolean):void{
-  this.soundEnabled=enabled;this.saveSetting('adivina.soundEnabled',String(enabled));
-  if(enabled)this.prepareAudio();
+  if(this.soundEnabled===enabled)return;
+  if(enabled){this.soundEnabled=true;this.prepareAudio();this.playSound('switchOn');}
   else{
-   for(const kind of this.soundSources.keys())this.stopSoundSource(kind);
-   if(this.soundAudio)Object.values(this.soundAudio).forEach(audio=>audio.pause());
+   this.playSound('switchOff');
+   for(const kind of this.soundSources.keys())if(kind!=='switchOff')this.stopSoundSource(kind);
+   if(this.soundAudio)for(const [kind,audio] of Object.entries(this.soundAudio))if(kind!=='switchOff')audio.pause();
+   this.soundEnabled=false;
   }
+  this.saveSetting('adivina.soundEnabled',String(enabled));
  }
  setVibrationEnabled(enabled:boolean):void{
-  this.vibrationEnabled=enabled;this.saveSetting('adivina.vibrationEnabled',String(enabled));
+  if(this.vibrationEnabled===enabled)return;this.playToggleSound(enabled);this.vibrationEnabled=enabled;this.saveSetting('adivina.vibrationEnabled',String(enabled));
  }
- setAccent(id:AccentId):void{this.accentId=id;this.saveSetting('adivina.accent',id);}
- setCharacterNameSize(size:CharacterNameSize):void{this.characterNameSize=size;this.saveSetting('adivina.characterNameSize',size);}
+ private playToggleSound(enabled:boolean):void{this.prepareAudio();this.playSound(enabled?'switchOn':'switchOff');}
+ selectSettingsTab(tab:SettingsTab):void{if(this.settingsTab===tab)return;this.settingsTab=tab;this.prepareAudio();this.playSound('tabChange');}
+ setAccent(id:AccentId):void{if(this.accentId===id)return;this.playSettingsSelection();this.accentId=id;this.saveSetting('adivina.accent',id);}
+ setCharacterNameSize(size:CharacterNameSize):void{if(this.characterNameSize===size)return;this.playSettingsSelection();this.characterNameSize=size;this.saveSetting('adivina.characterNameSize',size);}
  setLanguage(language:'es'|'en'):void{
   if(language===this.language)return;
+  this.playSettingsSelection();
   this.saveSetting('adivina.language',language);
-  window.location.reload();
+  window.setTimeout(()=>window.location.reload(),250);
  }
+ private playSettingsSelection():void{this.prepareAudio();this.playSound('save');}
  timeLabel(seconds:number):string{return seconds===30?`30 ${tr('seg')}`:seconds===60?'1 min':seconds===90?`1 min 30 ${tr('seg')}`:'2 min';}
  requestHome():void{
   if(this.view==='characterPreview'){this.previewImageRequest++;this.previewLoading=false;this.previewCharacter=null;this.view='categoryCards';return;}
@@ -283,6 +305,7 @@ export class AppComponent implements OnInit, OnDestroy {
  goHome():void{this.clearRevealTimer();this.clearTurnTimer();this.view='home';}
  openSettings():void{this.settingsTab='general';this.view='settings';this.prepareAudio();this.playSound('gear');}
  openCategoryCards(name:string):void{
+  if(this.view==='settings')this.playSettingsSelection();
   this.categoryBrowserReturnView=this.view==='setup'?'setup':'settings';
   this.selectedCategoryName=name;
   this.characterSort='id';
@@ -524,7 +547,12 @@ export class AppComponent implements OnInit, OnDestroy {
       save:this.createSoundBuffer([{frequency:660,duration:0.08},{frequency:880,duration:0.12}]),
        timerToggle:this.createSoundBuffer([{frequency:520,duration:0.06},{frequency:390,duration:0.06}]),
        celebration:this.createSoundBuffer([{frequency:523,duration:0.3},{frequency:659,duration:0.3},{frequency:784,duration:0.3},{frequency:1047,duration:0.6},{frequency:784,duration:0.3},{frequency:1047,duration:0.6},{frequency:1318,duration:0.6},{frequency:1047,duration:0.3},{frequency:1318,duration:1.7}]),
-       newGame:this.createSoundBuffer([{frequency:392,duration:0.09},{frequency:523,duration:0.09},{frequency:659,duration:0.13},{frequency:784,duration:0.22}])
+       newGame:this.createSoundBuffer([{frequency:392,duration:0.09},{frequency:523,duration:0.09},{frequency:659,duration:0.13},{frequency:784,duration:0.22}]),
+       dice:this.createSoundBuffer([{frequency:1550,duration:0.035},{frequency:920,duration:0.045},{frequency:1720,duration:0.03},{frequency:1080,duration:0.05},{frequency:1380,duration:0.035},{frequency:760,duration:0.07}]),
+       trash:this.createTrashSoundBuffer(),
+       switchOn:this.createSoundBuffer([{frequency:1100,duration:0.045},{frequency:1650,duration:0.075}]),
+       switchOff:this.createSoundBuffer([{frequency:620,duration:0.055},{frequency:340,duration:0.09}]),
+       tabChange:this.createSoundBuffer([{frequency:1760,duration:0.025},{frequency:1320,duration:0.035},{frequency:990,duration:0.065}])
      };
     }
     void this.soundContext.resume().catch(()=>{});
@@ -543,7 +571,12 @@ export class AppComponent implements OnInit, OnDestroy {
      save:this.createSound([{frequency:660,duration:0.08},{frequency:880,duration:0.12}]),
      timerToggle:this.createSound([{frequency:520,duration:0.06},{frequency:390,duration:0.06}]),
      celebration:this.createSound([{frequency:523,duration:0.3},{frequency:659,duration:0.3},{frequency:784,duration:0.3},{frequency:1047,duration:0.6},{frequency:784,duration:0.3},{frequency:1047,duration:0.6},{frequency:1318,duration:0.6},{frequency:1047,duration:0.3},{frequency:1318,duration:1.7}]),
-     newGame:this.createSound([{frequency:392,duration:0.09},{frequency:523,duration:0.09},{frequency:659,duration:0.13},{frequency:784,duration:0.22}])
+     newGame:this.createSound([{frequency:392,duration:0.09},{frequency:523,duration:0.09},{frequency:659,duration:0.13},{frequency:784,duration:0.22}]),
+     dice:this.createSound([{frequency:1550,duration:0.035},{frequency:920,duration:0.045},{frequency:1720,duration:0.03},{frequency:1080,duration:0.05},{frequency:1380,duration:0.035},{frequency:760,duration:0.07}]),
+     trash:this.createSound([{frequency:1900,duration:0.035},{frequency:780,duration:0.045},{frequency:2400,duration:0.035},{frequency:950,duration:0.05},{frequency:1800,duration:0.06},{frequency:130,duration:0.16}],true),
+     switchOn:this.createSound([{frequency:1100,duration:0.045},{frequency:1650,duration:0.075}]),
+     switchOff:this.createSound([{frequency:620,duration:0.055},{frequency:340,duration:0.09}]),
+     tabChange:this.createSound([{frequency:1760,duration:0.025},{frequency:1320,duration:0.035},{frequency:990,duration:0.065}])
     };
     this.soundAudio={
      beep:new Audio(this.soundUrls.beep),
@@ -555,7 +588,12 @@ export class AppComponent implements OnInit, OnDestroy {
      save:new Audio(this.soundUrls.save),
      timerToggle:new Audio(this.soundUrls.timerToggle),
      celebration:new Audio(this.soundUrls.celebration),
-     newGame:new Audio(this.soundUrls.newGame)
+     newGame:new Audio(this.soundUrls.newGame),
+     dice:new Audio(this.soundUrls.dice),
+     trash:new Audio(this.soundUrls.trash),
+     switchOn:new Audio(this.soundUrls.switchOn),
+     switchOff:new Audio(this.soundUrls.switchOff),
+     tabChange:new Audio(this.soundUrls.tabChange)
     };
     for(const audio of Object.values(this.soundAudio)){audio.preload='auto';audio.load();}
    }
@@ -577,6 +615,24 @@ export class AppComponent implements OnInit, OnDestroy {
     samples[offset+i]=wave*fade*(horn?14000/32768:16000/32768);
    }
    offset+=length;
+  }
+  return buffer;
+ }
+ private createTrashSoundBuffer():AudioBuffer{
+  const context=this.soundContext!;
+  const sampleRate=context.sampleRate;
+  const duration=0.82;
+  const sampleCount=Math.round(duration*sampleRate);
+  const buffer=context.createBuffer(1,sampleCount,sampleRate);
+  const samples=buffer.getChannelData(0);
+  for(let i=0;i<sampleCount;i++){
+   const t=i/sampleRate;
+   const crumple=t<0.66?(1-t/0.72)*(0.25+0.75*Math.abs(Math.sin(2*Math.PI*8*t)*Math.sin(2*Math.PI*3.1*t))):0;
+   const noise=(Math.random()*2-1)*crumple*0.42;
+   const impactTime=t-0.64;
+   const impact=impactTime>=0?Math.sin(2*Math.PI*(105-25*impactTime)*impactTime)*Math.exp(-impactTime*25)*0.65:0;
+   const click=impactTime>=0?((Math.random()*2-1)*Math.exp(-impactTime*95)*0.28):0;
+   samples[i]=Math.max(-1,Math.min(1,noise+impact+click));
   }
   return buffer;
  }
@@ -676,11 +732,12 @@ export class AppComponent implements OnInit, OnDestroy {
   this.rerollDialog.nativeElement.close();
   this.skipped++;
   this.clearTurnTimer();
+  this.playSound('dice');
   this.pausedTurnRemainingMs=0;
   this.rerollExcludedId=this.current.id;
   this.current=null;
   this.cardFlipped=false;
   this.view='between';
-  this.beginReveal();
+  this.countdown=0;
  }
 }

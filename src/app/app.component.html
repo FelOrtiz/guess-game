@@ -44,7 +44,8 @@
     </div>
     <ng-container *ngIf="setupStep==='players'">
      <section class="settings-section"><h2>{{tr('Jugadores')}}</h2><p>{{tr('El orden de esta lista será el orden de los turnos.')}}</p>
-      <form class="add-player" (ngSubmit)="addPlayer()"><input name="setupPlayerName" [(ngModel)]="newPlayerName" maxlength="30" [attr.placeholder]="tr('Nombre del jugador')" [attr.aria-label]="tr('Nombre del jugador')"/><button type="submit">{{tr('AGREGAR')}}</button></form>
+      <form class="add-player" (ngSubmit)="addPlayer()"><input name="setupPlayerName" [ngModel]="newPlayerName" (ngModelChange)="onPlayerNameChange($event)" pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]*" maxlength="30" [attr.placeholder]="tr('Nombre del jugador')" [attr.aria-label]="tr('Nombre del jugador')"/><button type="submit">{{tr('AGREGAR')}}</button></form>
+      <p class="player-name-error" *ngIf="playerNameError" role="alert">{{playerNameError}}</p>
       <div class="player-list"><div class="player-row" *ngFor="let name of playerNames;let i=index"><span class="player-position">{{i+1}}</span><strong>{{name}}</strong><button (click)="movePlayer(i,-1)" [disabled]="i===0" [attr.aria-label]="tr('Subir a')+' '+name">↑</button><button (click)="movePlayer(i,1)" [disabled]="i===playerNames.length-1" [attr.aria-label]="tr('Bajar a')+' '+name">↓</button><button (click)="removePlayer(i)" [attr.aria-label]="tr('Quitar a')+' '+name">×</button></div></div>
      </section>
      <p class="setup-requirement" *ngIf="playerNames.length<2" role="status">{{tr('Agrega al menos dos jugadores para continuar.')}}</p>
@@ -156,10 +157,10 @@
    </main>
    <main *ngIf="view==='settings'" class="settings fade"><div class="section-kicker">{{tr("PERSONALIZA TU PARTIDA")}}</div><h1>{{tr("Configurar")}}<br/><em>{{tr("la partida")}}</em></h1><p>{{tr("Elige las reglas, los jugadores y las categorías antes de empezar.")}}</p>
     <nav class="settings-tabs" [attr.aria-label]="tr('Secciones de configuración')">
-     <button type="button" (click)="settingsTab='general'" [class.active]="settingsTab==='general'" [attr.aria-pressed]="settingsTab==='general'">{{tr("GENERAL")}}</button>
-     <button type="button" (click)="settingsTab='players'" [class.active]="settingsTab==='players'" [attr.aria-pressed]="settingsTab==='players'">{{tr("JUGADORES")}}</button>
-     <button type="button" (click)="settingsTab='categories'" [class.active]="settingsTab==='categories'" [attr.aria-pressed]="settingsTab==='categories'">{{tr("CATEGORÍAS")}}</button>
-     <button type="button" (click)="settingsTab='others'" [class.active]="settingsTab==='others'" [attr.aria-pressed]="settingsTab==='others'">{{tr('OTROS')}}</button>
+     <button type="button" (click)="selectSettingsTab('general')" [class.active]="settingsTab==='general'" [attr.aria-pressed]="settingsTab==='general'">{{tr("GENERAL")}}</button>
+     <button type="button" (click)="selectSettingsTab('players')" [class.active]="settingsTab==='players'" [attr.aria-pressed]="settingsTab==='players'">{{tr("JUGADORES")}}</button>
+     <button type="button" (click)="selectSettingsTab('categories')" [class.active]="settingsTab==='categories'" [attr.aria-pressed]="settingsTab==='categories'">{{tr("CATEGORÍAS")}}</button>
+     <button type="button" (click)="selectSettingsTab('others')" [class.active]="settingsTab==='others'" [attr.aria-pressed]="settingsTab==='others'">{{tr('OTROS')}}</button>
     </nav>
     <div class="settings-tab-panel" [hidden]="settingsTab!=='general'">
      <section class="settings-section"><h2>{{tr("Rondas")}}</h2><p>{{tr("Cada jugador participa una vez por ronda.")}}</p><div class="option-grid"><button *ngFor="let option of roundOptions" (click)="setRounds(option)" [class.selected]="roundCount===option">{{option}}</button></div></section>
@@ -182,7 +183,8 @@
     </div>
     <div class="settings-tab-panel" [hidden]="settingsTab!=='players'">
      <section class="settings-section"><h2>{{tr("Jugadores")}}</h2><p>{{tr("El orden de esta lista será el orden de los turnos.")}}</p>
-      <form class="add-player" (ngSubmit)="addPlayer()"><input name="playerName" [(ngModel)]="newPlayerName" maxlength="30" [attr.placeholder]="tr('Nombre del jugador')" [attr.aria-label]="tr('Nombre del jugador')"/><button type="submit">{{tr("AGREGAR")}}</button></form>
+      <form class="add-player" (ngSubmit)="addPlayer()"><input name="playerName" [ngModel]="newPlayerName" (ngModelChange)="onPlayerNameChange($event)" pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]*" maxlength="30" [attr.placeholder]="tr('Nombre del jugador')" [attr.aria-label]="tr('Nombre del jugador')"/><button type="submit">{{tr("AGREGAR")}}</button></form>
+      <p class="player-name-error" *ngIf="playerNameError" role="alert">{{playerNameError}}</p>
       <div class="player-list"><div class="player-row" *ngFor="let name of playerNames;let i=index"><span class="player-position">{{i+1}}</span><strong>{{name}}</strong><button (click)="movePlayer(i,-1)" [disabled]="i===0" [attr.aria-label]="tr('Subir a')+' '+name">↑</button><button (click)="movePlayer(i,1)" [disabled]="i===playerNames.length-1" [attr.aria-label]="tr('Bajar a')+' '+name">↓</button><button (click)="removePlayer(i)" [attr.aria-label]="tr('Quitar a')+' '+name">×</button></div></div>
      </section>
     </div>

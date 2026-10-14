@@ -15,7 +15,7 @@ const messages: Record<string,string> = {
  "Agrega al menos dos jugadores en Configurar.": $localize`:@@s12:Agrega al menos dos jugadores en Configurar.`,
  "Activa al menos una categoría en Configurar.": $localize`:@@s13:Activa al menos una categoría en Configurar.`,
  "No hay personajes disponibles en las categorías activas.": $localize`:@@s14:No hay personajes disponibles en las categorías activas.`,
- "PERSONAJES": $localize`:@@s15:PERSONAJES`,
+ "PERSONAJES DISPONIBLES": $localize`:@@s15:PERSONAJES DISPONIBLES`,
  "CATEGORÍAS ACTIVAS": $localize`:@@s16:CATEGORÍAS ACTIVAS`,
  "RONDA": $localize`:@@s17:RONDA`,
  "DE": $localize`:@@s18:DE`,

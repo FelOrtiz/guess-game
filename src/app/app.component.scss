@@ -245,3 +245,9 @@
 .preview-loading ion-spinner{width:46px;height:46px;color:var(--accent)}
 .character-card{width:100%;height:auto;min-height:0;max-height:none;aspect-ratio:9 / 16;flex:0 0 auto}
 .timeout-character-card{flex:1 1 auto;min-height:0;aspect-ratio:auto}
+.screen-actions{display:grid;gap:10px;width:100%;margin-top:auto}
+.scoring-actions .score-options{margin-top:0}
+.game-setup .setup-next,.game-setup .setup-actions{margin-top:auto}
+.between-actions{align-self:stretch}
+.timeout-continue{margin-top:auto}
+.home,.between,.scoring,.round-result,.timeout-screen,.final-screen{padding-bottom:0}

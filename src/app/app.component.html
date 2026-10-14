@@ -26,12 +26,12 @@
     <div class="hero-symbol"><span>?</span><span class="hero-orbit">✦</span></div>
     <div class="eyebrow">{{tr("EL JUEGO DE LAS PREGUNTAS")}}</div>
     <h1>{{tr("¿QUIÉN")}}<br/><em>{{tr("SOY?")}}</em></h1>
-    <p class="tagline">{{availableCount}} {{tr('personajes')}}. {{categoryCount}} {{categoryCount===1 ? tr('categoría') : tr('categorías')}}.<br/>{{tr("Infinitas preguntas para adivinar.")}}</p>
+    <p class="tagline">{{characters.length}} {{tr('personajes')}}. {{categories.length}} {{categories.length===1 ? tr('categoría') : tr('categorías')}}.<br/>{{tr("Infinitas preguntas para adivinar.")}}</p>
     <div class="home-actions">
      <button class="primary-button" (click)="openSetup()"><ion-icon name="play"></ion-icon> {{tr("NUEVO JUEGO")}} <span class="button-arrow">↗</span></button>
      <button class="secondary-button" (click)="openSettings()"><ion-icon name="settings-outline"></ion-icon> {{tr("CONFIGURAR")}}</button>
     </div>
-    <div class="home-stats"><div><strong>{{availableCount}}</strong><small>{{tr("PERSONAJES")}}</small></div><div class="stat-line"></div><div><strong>{{categoryCount}}</strong><small>{{tr("CATEGORÍAS ACTIVAS")}}</small></div></div>
+    <div class="home-stats"><div><strong>{{availableCount}}</strong><small>{{tr("PERSONAJES DISPONIBLES")}}</small></div><div class="stat-line"></div><div><strong>{{categoryCount}}</strong><small>{{tr("CATEGORÍAS ACTIVAS")}}</small></div></div>
     <p class="hint" *ngIf="error">{{error}}</p>
    </main>
    <main *ngIf="view==='setup'" class="settings game-setup fade">
@@ -112,12 +112,14 @@
     <div class="section-kicker">{{correctingExpiredTurn ? tr('¡ACIERTO DE ') : tr('TURNO DE ')}}{{scoringPlayer?.name}}{{correctingExpiredTurn ? '!' : ''}}</div>
     <h1>{{correctingExpiredTurn ? tr('¿CÓMO FUE') : tr('PUNTUAR')}}<br/><em>{{correctingExpiredTurn ? tr('EL ACIERTO?') : tr('EL TURNO')}}</em></h1>
     <p>{{correctingExpiredTurn ? tr('Elige una opción para sumar los puntos de este turno.') : tr('Elige los puntos del acierto o marca la respuesta incorrecta.')}}</p>
-    <div class="score-options">
-     <button *ngIf="bonusEnabled" (click)="scoreCorrect(baseScore+bonusScore)">{{tr("ANTES DE")}} {{bonusQuestions}} {{tr("PREGUNTAS")}} <strong>+{{baseScore+bonusScore}} {{tr("puntos")}}</strong></button>
-     <button (click)="scoreCorrect(baseScore)">{{tr("PUNTAJE BASE")}} <strong>+{{baseScore}} {{tr("puntos")}}</strong></button>
-     <button *ngIf="cluePenaltyEnabled" (click)="scoreCorrect(baseScore+cluePenalty)">{{tr("CON PISTA")}} <strong>{{signedScore(baseScore+cluePenalty)}} {{tr("puntos")}}</strong></button>
+    <div class="screen-actions scoring-actions">
+     <div class="score-options">
+      <button *ngIf="bonusEnabled" (click)="scoreCorrect(baseScore+bonusScore)">{{tr("ANTES DE")}} {{bonusQuestions}} {{tr("PREGUNTAS")}} <strong>+{{baseScore+bonusScore}} {{tr("puntos")}}</strong></button>
+      <button (click)="scoreCorrect(baseScore)">{{tr("PUNTAJE BASE")}} <strong>+{{baseScore}} {{tr("puntos")}}</strong></button>
+      <button *ngIf="cluePenaltyEnabled" (click)="scoreCorrect(baseScore+cluePenalty)">{{tr("CON PISTA")}} <strong>{{signedScore(baseScore+cluePenalty)}} {{tr("puntos")}}</strong></button>
+     </div>
+     <button class="score-incorrect" *ngIf="!correctingExpiredTurn" (click)="scoreIncorrect()"><ion-icon name="close-circle" aria-hidden="true"></ion-icon> {{tr("MARCAR COMO INCORRECTO")}}</button>
     </div>
-    <button class="score-incorrect" *ngIf="!correctingExpiredTurn" (click)="scoreIncorrect()"><ion-icon name="close-circle" aria-hidden="true"></ion-icon> {{tr("MARCAR COMO INCORRECTO")}}</button>
    </main>
    <main *ngIf="view==='between'" class="between fade">
     <div class="between-symbol" aria-hidden="true">?</div>
@@ -134,19 +136,23 @@
      <span class="turn-phone-icon" aria-hidden="true"><ion-icon name="phone-portrait-outline"></ion-icon><ion-icon name="refresh"></ion-icon></span>
      <span><strong>{{tr('GIRA EL TELÉFONO HACIA LOS DEMÁS')}}</strong><small>{{tr('No mires la carta del personaje.')}}</small></span>
     </div>
-    <button class="primary-button" (click)="beginReveal()" [disabled]="countdown > 0">
-     <ion-icon name="play" *ngIf="countdown === 0" aria-hidden="true"></ion-icon>
-     <span>{{countdown > 0 ? tr('CONTINUANDO EN ') + countdown + '…' : tr('INICIAR')}}</span>
-    </button>
-    <button *ngIf="expiredPlayer && countdown === 0" class="late-correct-button" (click)="correctExpiredTurn()">{{expiredPlayer.name}} {{tr("acertó al final · MARCAR CORRECTA")}}</button>
+    <div class="screen-actions between-actions">
+     <button class="primary-button" (click)="beginReveal()" [disabled]="countdown > 0">
+      <ion-icon name="play" *ngIf="countdown === 0" aria-hidden="true"></ion-icon>
+      <span>{{countdown > 0 ? tr('CONTINUANDO EN ') + countdown + '…' : tr('INICIAR')}}</span>
+     </button>
+     <button *ngIf="expiredPlayer && countdown === 0" class="late-correct-button" (click)="correctExpiredTurn()">{{expiredPlayer.name}} {{tr("acertó al final · MARCAR CORRECTA")}}</button>
+    </div>
    </main>
    <main *ngIf="view==='roundResult'" class="round-result fade">
     <div class="finish-icon">🏆</div><div class="section-kicker">{{tr("RONDA")}} {{roundNumber}} {{tr("COMPLETADA")}}</div>
     <h1>{{roundWinners.length===1 ? tr('GANADOR DE LA RONDA') : tr('EMPATE EN LA RONDA')}}</h1>
     <div class="winner-names">{{roundWinnerNames}} · {{roundWinners[0].roundScore}} {{tr("puntos")}}</div>
     <div class="leaderboard"><div *ngFor="let player of players"><strong>{{player.name}}</strong><span>+{{player.roundScore}} {{tr('esta ronda')}} · {{player.score}} {{tr('puntos')}} · {{player.errors}} {{tr("errores")}}</span></div></div>
-    <button *ngIf="expiredPlayer" class="late-correct-button" (click)="correctExpiredTurn()">{{expiredPlayer.name}} {{tr("acertó al final · MARCAR CORRECTA")}}</button>
-    <button class="primary-button" (click)="nextRound()"><span>{{roundNumber===roundCount ? tr('VER RESULTADOS FINALES') : tr('SIGUIENTE RONDA')}}</span><span class="button-arrow" aria-hidden="true">↗</span></button>
+    <div class="screen-actions round-result-actions">
+     <button *ngIf="expiredPlayer" class="late-correct-button" (click)="correctExpiredTurn()">{{expiredPlayer.name}} {{tr("acertó al final · MARCAR CORRECTA")}}</button>
+     <button class="primary-button" (click)="nextRound()"><span>{{roundNumber===roundCount ? tr('VER RESULTADOS FINALES') : tr('SIGUIENTE RONDA')}}</span><span class="button-arrow" aria-hidden="true">↗</span></button>
+    </div>
    </main>
    <main *ngIf="view==='settings'" class="settings fade"><div class="section-kicker">{{tr("PERSONALIZA TU PARTIDA")}}</div><h1>{{tr("Configurar")}}<br/><em>{{tr("la partida")}}</em></h1><p>{{tr("Elige las reglas, los jugadores y las categorías antes de empezar.")}}</p>
     <nav class="settings-tabs" [attr.aria-label]="tr('Secciones de configuración')">
@@ -201,8 +207,10 @@
       <span>{{player.score}} {{tr('puntos')}} · {{player.errors}} {{tr("errores")}}</span>
      </div>
     </div>
-    <button class="primary-button" (click)="replay()" [disabled]="!canStart"><span>{{tr("JUGAR DE NUEVO")}}</span><span class="button-arrow" aria-hidden="true">↗</span></button>
-    <button class="secondary-button" (click)="requestHome()">{{tr("VOLVER AL INICIO")}}</button>
+    <div class="screen-actions final-actions">
+     <button class="primary-button" (click)="replay()" [disabled]="!canStart"><span>{{tr("JUGAR DE NUEVO")}}</span><span class="button-arrow" aria-hidden="true">↗</span></button>
+     <button class="secondary-button" (click)="requestHome()">{{tr("VOLVER AL INICIO")}}</button>
+    </div>
    </main>
   </ng-container>
  </div>

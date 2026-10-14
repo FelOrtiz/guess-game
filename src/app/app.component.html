@@ -12,7 +12,7 @@
     <div class="top-placeholder" *ngIf="view !== 'game' && view !== 'scoring'"></div>
    </header>
    <ng-template #cardFront let-person let-age="age" let-timer="timer" let-preview="preview">
-    <img *ngIf="!photoMissing(person)" class="character-photo" [class.photo-loaded]="hasCharacterPhoto(person)" [src]="'assets/photos/'+person.id+'.jpg'" [alt]="tr('Retrato de')+' '+person.name" decoding="async" draggable="false" (load)="markPhotoAvailable(person.id)" (error)="markPhotoMissing(person.id)" />
+    <img *ngIf="!photoMissing(person)" class="character-photo" [class.photo-loaded]="hasCharacterPhoto(person)" [src]="photoPath(person)" [alt]="tr('Retrato de')+' '+person.name" decoding="async" draggable="false" (load)="markPhotoAvailable(person.id)" (error)="markPhotoMissing(person.id)" />
     <div class="card-top"><div class="flag-pill card-panel" [attr.aria-label]="countryLabelFor(person)"><span class="flag">{{flagFor(person)}}</span><span class="country">{{countryLabelFor(person)}}</span></div><div class="character-meta card-panel" [attr.aria-label]="age !== null ? (person.isAlive ? age + ' ' + tr('años') + ', ' + tr('vivo') : tr('Murió a los') + ' ' + age + ' ' + tr('años')) : (person.isAlive ? tr('vivo') : tr('fallecido'))"><span *ngIf="age !== null">{{age}} {{tr('años')}}</span><span aria-hidden="true">{{person.isAlive ? '❤️' : '💀'}}</span></div></div>
     <div class="card-center"><h2>{{person.name}}</h2></div>
     <div class="card-bottom" [class.preview-card-bottom]="preview">
@@ -100,7 +100,7 @@
     <p>{{tr("No lograste adivinar el personaje.")}}</p>
     <section class="character-card timeout-character-card" [class.has-photo]="hasCharacterPhoto(current)" [class.name-size-normal]="characterNameSize==='normal'" [class.name-size-large]="characterNameSize==='large'" [class.name-size-huge]="characterNameSize==='huge'" [style.--accent]="category?.color" [style.--accent-muted]="category?.light" [attr.aria-label]="tr('El personaje era')+' '+current.name">
      <div class="card-face card-front">
-      <img *ngIf="!photoMissing(current)" class="character-photo" [class.photo-loaded]="hasCharacterPhoto(current)" [src]="'assets/photos/'+current.id+'.jpg'" [alt]="tr('Retrato de')+' '+current.name" decoding="async" (load)="markPhotoAvailable(current.id)" (error)="markPhotoMissing(current.id)" />
+      <img *ngIf="!photoMissing(current)" class="character-photo" [class.photo-loaded]="hasCharacterPhoto(current)" [src]="photoPath(current)" [alt]="tr('Retrato de')+' '+current.name" decoding="async" (load)="markPhotoAvailable(current.id)" (error)="markPhotoMissing(current.id)" />
       <div class="card-top"><div class="flag-pill card-panel"><span class="flag">{{flag}}</span><span class="country">{{countryLabel}}</span></div></div>
       <div class="card-center"><h2>{{current.name}}</h2></div>
       <div class="card-bottom"><span class="category-pill card-panel">{{category?.icon}} {{tr(current.category)}}</span></div>

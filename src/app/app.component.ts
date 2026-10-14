@@ -17,7 +17,7 @@ type AccentId = 'green' | 'blue' | 'red' | 'yellow' | 'orange';
 type CharacterNameSize = 'normal' | 'large' | 'huge';
 type SoundKind = 'beep' | 'midpoint' | 'success' | 'error' | 'flip' | 'gear' | 'save' | 'timerToggle' | 'celebration' | 'newGame' | 'dice' | 'trash' | 'switchOn' | 'switchOff' | 'tabChange';
 interface Player {name:string;score:number;roundScore:number;correct:number;errors:number;}
-interface Character {id:number;name:string;category:string;franchise?:string;nationality:string;birthday:string|null;deathDate:string|null;gender:string;isAlive:boolean;}
+interface Character {id:number;category_id:number;name:string;category:string;franchise?:string;nationality:string;birthday:string|null;deathDate:string|null;gender:string;isAlive:boolean;}
 interface Category {name:string;color:string;light:string;icon:string;}
 const CATEGORY_DATA:Category[] = [
  {name:'Actores de Hollywood',color:'#d990ff',light:'#36234e',icon:'🎬'},
@@ -167,6 +167,10 @@ export class AppComponent implements OnInit, OnDestroy {
  categoryFor(person:Character):Category|undefined{return this.categories.find(c=>c.name===person.category);}
  hasCharacterPhoto(person:Character):boolean{return this.photoStatuses.get(person.id)===true;}
  photoMissing(person:Character):boolean{return this.photoStatuses.get(person.id)===false;}
+ photoPath(person:Character):string{
+  const categoryIndex=this.characters.filter(character=>character.category_id===person.category_id).findIndex(character=>character.id===person.id)+1;
+  return `assets/photos/${person.category_id}/${categoryIndex}.jpg`;
+ }
  markPhotoAvailable(id:number):void{this.photoStatuses.set(id,true);}
  markPhotoMissing(id:number):void{this.photoStatuses.set(id,false);}
  get categoryCharacters():Character[]{
@@ -333,7 +337,7 @@ export class AppComponent implements OnInit, OnDestroy {
    else show();
   };
   image.onerror=()=>{this.markPhotoMissing(next.id);show();};
-  image.src=`assets/photos/${next.id}.jpg`;
+  image.src=this.photoPath(next);
  }
  onPreviewTouchStart(event:TouchEvent):void{
   if(event.touches.length!==1){this.previewTouchStart=null;return;}

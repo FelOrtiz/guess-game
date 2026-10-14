@@ -254,3 +254,4 @@
 .timeout-continue{margin-top:auto}
 .home,.between,.scoring,.round-result,.timeout-screen,.final-screen{padding-bottom:0}
 @media(max-width:400px) and (max-height:700px){.game .character-card{flex:1 1 0;min-height:0;height:auto;aspect-ratio:auto;margin:12px 0}}
+@media(max-width:420px){.settings-tabs button{padding-inline:0;font-size:9px;letter-spacing:0}}

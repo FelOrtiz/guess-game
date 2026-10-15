@@ -69,7 +69,7 @@
      <button type="button" (click)="characterSort='id'" [class.selected]="characterSort==='id'" [attr.aria-pressed]="characterSort==='id'">{{tr('POR ID')}}</button>
      <button type="button" (click)="characterSort='name'" [class.selected]="characterSort==='name'" [attr.aria-pressed]="characterSort==='name'">{{tr('A–Z')}}</button>
     </div>
-    <div class="character-browser-list"><button type="button" *ngFor="let person of categoryCharacters" (click)="previewCard(person)"><span>#{{person.id}}</span><strong>{{person.name}}</strong><span aria-hidden="true">›</span></button></div>
+    <div class="character-browser-list"><button type="button" *ngFor="let person of categoryCharacters" (click)="previewCard(person)"><span>#{{person.id}}</span><strong>{{person.name}}<ion-icon *ngIf="hasCharacterPhoto(person)" class="character-photo-indicator" name="image-outline" [attr.aria-label]="tr('Tiene foto')"></ion-icon></strong><span aria-hidden="true">›</span></button></div>
    </main>
    <main *ngIf="view==='characterPreview' && previewCharacter" class="game card-preview-screen fade" (touchstart)="onPreviewTouchStart($event)" (touchend)="onPreviewTouchEnd($event)" (touchcancel)="cancelPreviewSwipe()">
     <div class="preview-heading"><span class="section-kicker">{{tr('VISTA PREVIA DE CARTA')}}</span><span>#{{previewCharacter.id}}</span></div>

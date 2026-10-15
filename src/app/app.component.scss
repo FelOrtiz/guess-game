@@ -145,7 +145,7 @@
 .current-standing>span{font-size:10px;font-weight:900;letter-spacing:.8px;color:#a8b2d3}
 .current-standing strong{color:var(--ui-accent);font-size:15px}
 .current-standing strong small{color:#a8b2d3;font-size:11px;font-weight:700}
-.game .character-card{max-height:none;margin-top:auto;margin-bottom:auto}
+.game .character-card{max-height:none;margin-top:clamp(18px,3vh,28px);margin-bottom:auto}
 .game-actions{display:flex;align-items:stretch;gap:10px;width:100%}
 .card-back-actions{position:absolute;right:18px;bottom:18px;left:18px;z-index:1;width:auto}
 .game .score-button{flex:1;width:auto;min-height:60px}
@@ -241,11 +241,14 @@
 .character-browser-list{display:grid;gap:8px}
 .character-browser-list button{display:grid;grid-template-columns:48px minmax(0,1fr) 18px;align-items:center;gap:10px;width:100%;min-height:58px;padding:10px 14px;border:1px solid #344062;border-radius:14px;background:#202945;color:#f5f5ff;text-align:left}
 .character-browser-list button span:first-child{color:var(--ui-accent);font-size:11px;font-weight:900}
-.character-browser-list button strong{overflow-wrap:anywhere;font-size:14px}
+.character-browser-list button strong{display:flex;align-items:center;gap:7px;min-width:0;overflow-wrap:anywhere;font-size:14px}
+.character-photo-indicator{flex:0 0 auto;color:var(--ui-accent);font-size:17px}
 .character-browser-list button span:last-child{color:var(--ui-accent);font-size:24px}
+.game{min-height:0;overflow:hidden}
 .preview-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .preview-heading span:last-child{color:#a8b2d3;font-size:12px;font-weight:900}
-.card-preview-screen{touch-action:pan-y}
+.card-preview-screen{touch-action:pan-y;padding:16px 0}
+.card-preview-screen .character-card{width:calc(100% - 16px);align-self:center}
 .card-preview-screen .character-card{cursor:default;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .card-preview-screen .character-photo{pointer-events:none;-webkit-touch-callout:none}
 .preview-card-bottom{grid-template-columns:44px minmax(0,1fr) 44px;align-items:center}
@@ -257,6 +260,7 @@
 .preview-loading{position:absolute;inset:0;z-index:3;display:grid;place-items:center;background:#10182cbb;pointer-events:none}
 .preview-loading ion-spinner{width:46px;height:46px;color:var(--accent)}
 .character-card{width:100%;height:auto;min-height:0;max-height:none;aspect-ratio:9 / 16;flex:0 0 auto}
+.game .character-card{max-height:calc(100% - 18px)}
 .timeout-character-card{flex:1 1 auto;min-height:0;aspect-ratio:auto}
 .screen-actions{display:grid;gap:10px;width:100%;margin-top:auto}
 .scoring-actions .score-options{margin-top:0}

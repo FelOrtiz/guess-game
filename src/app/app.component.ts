@@ -8,7 +8,7 @@ import { Preferences } from '@capacitor/preferences';
 import { IonApp, IonContent, IonIcon, IonToggle, IonSpinner } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { tr } from './i18n';
-import { arrowBack, checkmark, close, refresh, diceOutline, settingsOutline, play, pause, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline, phonePortraitOutline } from 'ionicons/icons';
+import { arrowBack, checkmark, close, refresh, diceOutline, settingsOutline, play, pause, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline, phonePortraitOutline, imageOutline } from 'ionicons/icons';
 
 type View = 'home' | 'setup' | 'game' | 'scoring' | 'between' | 'timeout' | 'roundResult' | 'settings' | 'categoryCards' | 'characterPreview' | 'finished';
 type SetupStep = 'players' | 'categories';
@@ -92,7 +92,7 @@ export class AppComponent implements OnInit, OnDestroy {
  bonusEnabled=true;cluePenaltyEnabled=true;
  soundEnabled=true;vibrationEnabled=true;
  showFinalRanking=false;
- constructor(){addIcons({arrowBack,checkmark,close,refresh,diceOutline,settingsOutline,play,pause,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline,phonePortraitOutline});}
+ constructor(){addIcons({arrowBack,checkmark,close,refresh,diceOutline,settingsOutline,play,pause,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline,phonePortraitOutline,imageOutline});}
  async ngOnInit():Promise<void>{
   await this.restoreSettings();
   this.http.get<Character[]>('assets/character.json').subscribe({next:(people)=>{this.characters=people;this.loading=false;},error:()=>{this.loading=false;this.error=tr('No se pudo cargar el listado de personajes.');}});
@@ -170,6 +170,15 @@ export class AppComponent implements OnInit, OnDestroy {
  photoPath(person:Character):string{
   const categoryIndex=this.characters.filter(character=>character.category_id===person.category_id).findIndex(character=>character.id===person.id)+1;
   return `assets/photos/${person.category_id}/${categoryIndex}.jpg`;
+ }
+ preloadCategoryPhotos(categoryName:string):void{
+  this.characters.filter(person=>person.category===categoryName).forEach(person=>{
+   if(this.photoStatuses.has(person.id))return;
+   const image=new Image();
+   image.onload=()=>this.markPhotoAvailable(person.id);
+   image.onerror=()=>this.markPhotoMissing(person.id);
+   image.src=this.photoPath(person);
+  });
  }
  markPhotoAvailable(id:number):void{this.photoStatuses.set(id,true);}
  markPhotoMissing(id:number):void{this.photoStatuses.set(id,false);}
@@ -313,6 +322,7 @@ export class AppComponent implements OnInit, OnDestroy {
   this.categoryBrowserReturnView=this.view==='setup'?'setup':'settings';
   this.selectedCategoryName=name;
   this.characterSort='id';
+  this.preloadCategoryPhotos(name);
   this.view='categoryCards';
  }
  previewCard(person:Character):void{this.previewCharacter=person;this.view='characterPreview';}

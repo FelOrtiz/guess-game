@@ -395,7 +395,7 @@ export class AppComponent implements OnInit, OnDestroy {
   this.rerollExcludedId=null;
   this.expiredPlayerIndex=null;this.correctingExpiredTurn=false;
   this.remaining=this.characters.filter(p=>this.enabled.includes(p.category)).map(p=>p.id);
-  this.view='between';this.playSound('newGame',false);
+  this.view='between';this.prepareAudio();this.playSound('newGame',false);
  }
  private pickNext(excludeId?:number):boolean{
   let candidates=this.remaining.filter(id=>id!==excludeId);

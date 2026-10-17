@@ -149,7 +149,12 @@
 .game-actions{display:flex;align-items:stretch;gap:10px;width:100%}
 .card-back-actions{position:absolute;right:18px;bottom:18px;left:18px;z-index:1;width:auto}
 .game .score-button{flex:1;width:auto;min-height:60px}
-.pause-button{display:grid;place-items:center;flex:0 0 60px;min-height:60px;border:1px solid #3a456a;border-radius:19px;background:#232b4a;color:#e5e9ff;font-size:24px}
+.pause-button,.hint-button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex:0 0 60px;height:60px;padding:3px;box-sizing:border-box;border-radius:19px;background:#232b4a;font-size:22px}
+.pause-button{border:1px solid #3a456a;color:#e5e9ff}
+.hint-button{border:1px solid var(--ui-accent);color:var(--ui-accent)}
+.pause-button span,.hint-button span{font-size:9px;font-weight:800;line-height:1.1;letter-spacing:.2px}
+.hint-button:disabled{border-color:#3a456a;color:#7883a3;opacity:.65;cursor:not-allowed}
+.hint-button:focus-visible{outline:2px solid var(--ui-accent);outline-offset:3px}
 .pause-button:focus-visible{outline:2px solid var(--ui-accent);outline-offset:3px}
 .game .game-hint{margin-top:9px}
 .character-card{display:block;overflow:visible;border:0;background:none;box-shadow:none;perspective:1000px;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -187,6 +192,7 @@
 .reroll-dialog p strong{color:#f5f5ff}
 .reroll-dialog-actions{display:grid;gap:10px;margin-top:24px}
 .reroll-dialog-actions button{width:100%;min-height:56px}
+.hint-dialog-timer{margin:18px auto 0;width:max-content;padding:10px 20px;border:1px solid #465478;border-radius:14px;color:var(--ui-accent);font-size:32px;font-weight:900;font-variant-numeric:tabular-nums}
 .final-screen{position:relative;overflow:hidden;padding:24px 0;text-align:center}
 .final-screen>*:not(.confetti){position:relative;z-index:1}
 .final-screen .finish-icon{font-size:66px}

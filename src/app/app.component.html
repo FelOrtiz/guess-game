@@ -87,8 +87,9 @@
       <div class="card-face card-back" [attr.aria-hidden]="!cardFlipped">
        <span class="card-timer card-panel card-back-timer" [class.time-low]="timeLeft<=10" [attr.aria-label]="tr('Tiempo restante:')+' '+formattedTime">{{formattedTime}}</span>
        <div *ngIf="cardFlipped" class="game-actions card-back-actions" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+        <button type="button" class="hint-button" (click)="requestHint()" [disabled]="!canRequestHint" [attr.aria-label]="tr('Pedir pista')"><ion-icon name="search-outline" aria-hidden="true"></ion-icon><span aria-hidden="true">{{tr('Pista')}}</span></button>
         <button type="button" class="primary-button score-button" (click)="openScoring()">{{tr("PUNTUAR")}}</button>
-        <button type="button" class="pause-button" (click)="toggleTurnTimer()" [attr.aria-label]="turnTimerRunning ? tr('Pausar tiempo') : tr('Continuar tiempo')"><ion-icon [name]="turnTimerRunning ? 'pause' : 'play'" aria-hidden="true"></ion-icon></button>
+        <button type="button" class="pause-button" (click)="toggleTurnTimer()" [attr.aria-label]="turnTimerRunning ? tr('Pausar tiempo') : tr('Continuar tiempo')"><ion-icon [name]="turnTimerRunning ? 'pause' : 'play'" aria-hidden="true"></ion-icon><span aria-hidden="true">{{turnTimerRunning ? tr('Pausa') : tr('Play')}}</span></button>
        </div>
       </div>
      </div>
@@ -115,9 +116,9 @@
     <p>{{correctingExpiredTurn ? tr('Elige una opción para sumar los puntos de este turno.') : tr('Elige los puntos del acierto o marca la respuesta incorrecta.')}}</p>
     <div class="screen-actions scoring-actions">
      <div class="score-options">
-      <button *ngIf="bonusEnabled" (click)="scoreCorrect(baseScore+bonusScore)">{{tr("ANTES DE")}} {{bonusQuestions}} {{tr("PREGUNTAS")}} <strong>+{{baseScore+bonusScore}} {{tr("puntos")}}</strong></button>
-      <button (click)="scoreCorrect(baseScore)">{{tr("PUNTAJE BASE")}} <strong>+{{baseScore}} {{tr("puntos")}}</strong></button>
-      <button *ngIf="cluePenaltyEnabled" (click)="scoreCorrect(baseScore+cluePenalty)">{{tr("CON PISTA")}} <strong>{{signedScore(baseScore+cluePenalty)}} {{tr("puntos")}}</strong></button>
+      <button *ngIf="!hintUsed && bonusEnabled && bonusEligible" (click)="scoreCorrect(baseScore+bonusScore)">{{tr("Bonificación por tiempo")}} <small>{{tr("dentro de")}} {{timeBonusLabel(timeBonus)}}</small> <strong>+{{baseScore+bonusScore}} {{tr("puntos")}}</strong></button>
+      <button *ngIf="!hintUsed" (click)="scoreCorrect(baseScore)">{{tr("PUNTAJE BASE")}} <strong>+{{baseScore}} {{tr("puntos")}}</strong></button>
+      <button *ngIf="hintUsed" (click)="scoreCorrect(hintScore)">{{tr("CON PISTA")}} <strong>{{signedScore(hintScore)}} {{tr("puntos")}}</strong></button>
      </div>
      <button class="score-incorrect" *ngIf="!correctingExpiredTurn" (click)="scoreIncorrect()"><ion-icon name="close-circle" aria-hidden="true"></ion-icon> {{tr("MARCAR COMO INCORRECTO")}}</button>
     </div>
@@ -168,8 +169,8 @@
      <section class="settings-section"><h2>{{tr("Tiempo para adivinar")}}</h2><div class="option-grid"><button *ngFor="let option of timeOptions" (click)="setDuration(option)" [class.selected]="turnDuration===option">{{timeLabel(option)}}</button></div></section>
      <section class="settings-section score-settings"><h2>{{tr("Puntajes")}}</h2><p>{{tr("Configura los puntos y revisa cómo se aplican al puntuar.")}}</p>
       <div class="score-setting"><h3>{{tr("Puntaje base")}}</h3><p>{{tr("Puntos por adivinar dentro del tiempo.")}}</p><div class="option-grid score-setting-options" role="group" [attr.aria-label]="tr('Puntaje base')"><button type="button" *ngFor="let option of baseScoreOptions" (click)="setBaseScore(option)" [class.selected]="baseScore===option" [attr.aria-pressed]="baseScore===option">{{option}}</button></div></div>
-      <div class="score-setting"><div class="score-setting-heading"><h3>{{tr("Puntaje bonificación")}}</h3><ion-toggle [checked]="bonusEnabled" (ionChange)="setBonusEnabled($event.detail.checked)" [attr.aria-label]="tr('Activar puntaje de bonificación')"></ion-toggle></div><p>{{tr("Puntos extra por adivinar dentro del límite de preguntas.")}}</p><div class="option-grid score-setting-options" [class.disabled]="!bonusEnabled" role="group" [attr.aria-label]="tr('Puntaje bonificación')"><button type="button" *ngFor="let option of bonusScoreOptions" (click)="setBonusScore(option)" [disabled]="!bonusEnabled" [class.selected]="bonusScore===option" [attr.aria-pressed]="bonusScore===option">+{{option}}</button></div></div>
-      <div class="score-setting"><h3>{{tr("Bonificación preguntas")}}</h3><p>{{tr("Preguntas máximas para obtener la bonificación.")}}</p><div class="option-grid score-setting-options" [class.disabled]="!bonusEnabled" role="group" [attr.aria-label]="tr('Bonificación preguntas')"><button type="button" *ngFor="let option of bonusQuestionOptions" (click)="setBonusQuestions(option)" [disabled]="!bonusEnabled" [class.selected]="bonusQuestions===option" [attr.aria-pressed]="bonusQuestions===option">{{option}}</button></div></div>
+      <div class="score-setting"><div class="score-setting-heading"><h3>{{tr("Puntaje bonificación")}}</h3><ion-toggle [checked]="bonusEnabled" (ionChange)="setBonusEnabled($event.detail.checked)" [attr.aria-label]="tr('Activar puntaje de bonificación')"></ion-toggle></div><p>{{tr("Puntos extra por adivinar dentro del tiempo seleccionado.")}}</p><div class="option-grid score-setting-options" [class.disabled]="!bonusEnabled" role="group" [attr.aria-label]="tr('Puntaje bonificación')"><button type="button" *ngFor="let option of bonusScoreOptions" (click)="setBonusScore(option)" [disabled]="!bonusEnabled" [class.selected]="bonusScore===option" [attr.aria-pressed]="bonusScore===option">+{{option}}</button></div></div>
+      <div class="score-setting"><h3>{{tr("Bonificación por tiempo")}}</h3><p>{{tr("Tiempo máximo para obtener la bonificación.")}}</p><div class="option-grid score-setting-options" [class.disabled]="!bonusEnabled" role="group" [attr.aria-label]="tr('Bonificación por tiempo')"><button type="button" *ngFor="let option of timeBonusOptions" (click)="setTimeBonus(option)" [disabled]="!bonusEnabled" [class.selected]="timeBonus===option" [attr.aria-pressed]="timeBonus===option">{{timeBonusLabel(option)}}</button></div></div>
       <div class="score-setting"><div class="score-setting-heading"><h3>{{tr("Puntaje al dar pista")}}</h3><ion-toggle [checked]="cluePenaltyEnabled" (ionChange)="setCluePenaltyEnabled($event.detail.checked)" [attr.aria-label]="tr('Activar puntaje al dar pista')"></ion-toggle></div><p>{{tr("Ajuste aplicado al puntaje base cuando se usa una pista.")}}</p><div class="option-grid score-setting-options" [class.disabled]="!cluePenaltyEnabled" role="group" [attr.aria-label]="tr('Puntaje al dar pista')"><button type="button" *ngFor="let option of cluePenaltyOptions" (click)="setCluePenalty(option)" [disabled]="!cluePenaltyEnabled" [class.selected]="cluePenalty===option" [attr.aria-pressed]="cluePenalty===option">{{option===0 ? '-0' : option}}</button></div></div>
       <div class="score-preview" aria-live="polite" [attr.aria-label]="tr('Vista previa de puntajes')"><strong>{{tr("Vista previa")}}</strong><div><span>{{tr("Puntaje base")}}</span><b>+{{baseScore}} {{tr("puntos")}}</b></div><div *ngIf="bonusEnabled"><span>{{tr("Bonificación")}}</span><b>+{{baseScore+bonusScore}} {{tr("puntos")}}</b></div><div *ngIf="cluePenaltyEnabled"><span>{{tr("Con pista")}}</span><b>{{signedScore(baseScore+cluePenalty)}} {{tr("puntos")}}</b></div></div>
      </section>
@@ -233,6 +234,16 @@
  <div class="reroll-dialog-actions">
   <button type="button" class="secondary-button" (click)="cancelHome()">{{tr("SEGUIR JUGANDO")}}</button>
   <button type="button" class="primary-button" (click)="confirmHome()">{{tr("VOLVER AL INICIO")}}</button>
+ </div>
+</dialog>
+<dialog #hintDialog class="reroll-dialog hint-dialog" aria-labelledby="hint-dialog-title" aria-describedby="hint-dialog-description" (cancel)="$event.preventDefault();cancelHint()">
+ <div class="reroll-dialog-icon" aria-hidden="true"><ion-icon name="search-outline"></ion-icon></div>
+ <h2 id="hint-dialog-title">{{tr('¿Pedir pista?')}}</h2>
+ <p id="hint-dialog-description">{{tr('El tiempo sigue corriendo. Si confirmas, tendrás 10 segundos más y solo podrás puntuar con pista.')}}</p>
+ <div class="hint-dialog-timer" role="timer" [attr.aria-label]="tr('Tiempo restante:')+' '+formattedTime">{{formattedTime}}</div>
+ <div class="reroll-dialog-actions">
+  <button type="button" class="secondary-button" (click)="cancelHint()">{{tr('CANCELAR')}}</button>
+  <button type="button" class="primary-button" (click)="confirmHint()">{{tr('PEDIR PISTA')}}</button>
  </div>
 </dialog>
 </ion-app>

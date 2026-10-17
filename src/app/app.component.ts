@@ -8,7 +8,7 @@ import { Preferences } from '@capacitor/preferences';
 import { IonApp, IonContent, IonIcon, IonToggle, IonSpinner } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { tr } from './i18n';
-import { arrowBack, checkmark, close, refresh, diceOutline, settingsOutline, play, pause, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline, phonePortraitOutline, imageOutline } from 'ionicons/icons';
+import { arrowBack, checkmark, close, refresh, diceOutline, settingsOutline, play, pause, searchOutline, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline, phonePortraitOutline, imageOutline } from 'ionicons/icons';
 
 type View = 'home' | 'setup' | 'game' | 'scoring' | 'between' | 'timeout' | 'roundResult' | 'settings' | 'categoryCards' | 'characterPreview' | 'finished';
 type SetupStep = 'players' | 'categories';
@@ -35,6 +35,7 @@ export class AppComponent implements OnInit, OnDestroy {
  readonly language: 'es'|'en'=localStorage.getItem('adivina.language')==='en'?'en':'es';
  @ViewChild('rerollDialog',{static:true}) private rerollDialog!:ElementRef<HTMLDialogElement>;
  @ViewChild('homeDialog',{static:true}) private homeDialog!:ElementRef<HTMLDialogElement>;
+ @ViewChild('hintDialog',{static:true}) private hintDialog!:ElementRef<HTMLDialogElement>;
  private http=inject(HttpClient);
  private revealTimer:ReturnType<typeof setInterval>|null=null;
  private turnTimer:ReturnType<typeof setTimeout>|null=null;
@@ -63,7 +64,7 @@ export class AppComponent implements OnInit, OnDestroy {
  readonly timeOptions=[30,60,90,120];
  readonly revealDelayOptions=[1,3,5,10];
  readonly bonusScoreOptions=[0,1,2,3];
- readonly bonusQuestionOptions=[1,3,5,8];
+ readonly timeBonusOptions=[10,15,30,0];
  readonly baseScoreOptions=[1,2,3,5];
  readonly cluePenaltyOptions=[0,-1,-2,-3];
  readonly characterNameSizeOptions=[{id:'normal',label:'Normal',size:36},{id:'large',label:'Grande',size:52},{id:'huge',label:'Gigante',size:68}] as const;
@@ -88,11 +89,11 @@ export class AppComponent implements OnInit, OnDestroy {
  current:Character|null=null; cardFlipped=false; hasTurnStarted=false; remaining:number[]=[]; skipped=0;loading=true;error=''; countdown=0;
  playerNames:string[]=[];newPlayerName='';playerNameError='';roundCount=3;turnDuration=60;revealDelay=5;
  players:Player[]=[];roundNumber=1;playerIndex=0;timeLeft=0;
- bonusScore=1;bonusQuestions=3;baseScore=2;cluePenalty=-1;
- bonusEnabled=true;cluePenaltyEnabled=true;
+ bonusScore=1;timeBonus=0;baseScore=2;cluePenalty=-1;
+ bonusEnabled=true;cluePenaltyEnabled=true;hintUsed=false;
  soundEnabled=true;vibrationEnabled=true;
  showFinalRanking=false;
- constructor(){addIcons({arrowBack,checkmark,close,refresh,diceOutline,settingsOutline,play,pause,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline,phonePortraitOutline,imageOutline});}
+ constructor(){addIcons({arrowBack,checkmark,close,refresh,diceOutline,settingsOutline,play,pause,searchOutline,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline,phonePortraitOutline,imageOutline});}
  async ngOnInit():Promise<void>{
   await this.restoreSettings();
   this.http.get<Character[]>('assets/character.json').subscribe({next:(people)=>{this.characters=people;this.loading=false;},error:()=>{this.loading=false;this.error=tr('No se pudo cargar el listado de personajes.');}});
@@ -111,7 +112,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const bonusScore=Number(savedBonusScore);
     if(this.bonusScoreOptions.includes(bonusScore))this.bonusScore=bonusScore;
    }
-   const bonusQuestions=Number(await this.readSetting('adivina.bonusQuestions'));if(this.bonusQuestionOptions.includes(bonusQuestions))this.bonusQuestions=bonusQuestions;
+   const timeBonus=Number(await this.readSetting('adivina.timeBonus'));if(this.timeBonusOptions.includes(timeBonus))this.timeBonus=timeBonus;
    const baseScore=Number(await this.readSetting('adivina.baseScore'));if(this.baseScoreOptions.includes(baseScore))this.baseScore=baseScore;
    const savedCluePenalty=await this.readSetting('adivina.cluePenalty');
    if(savedCluePenalty!==null){
@@ -187,6 +188,8 @@ export class AppComponent implements OnInit, OnDestroy {
   return people.sort(this.characterSort==='id'?(a,b)=>a.id-b.id:(a,b)=>a.name.localeCompare(b.name,this.language));
  }
  get turnTimerRunning():boolean{return this.turnTimer!==null;}
+ get canRequestHint():boolean{return this.view==='game'&&this.cardFlipped&&this.turnTimerRunning&&!this.hintUsed&&this.timeLeft>0&&this.timeLeft<=this.turnDuration/2;}
+ get hintScore():number{return this.baseScore+(this.cluePenaltyEnabled?this.cluePenalty:0);}
  get progress():number{return this.players.length?Math.round(((this.roundNumber-1)*this.players.length+this.playerIndex)/(this.roundCount*this.players.length)*100):0;}
  get activePlayer():Player|undefined{return this.players[this.playerIndex];}
  get activePlayerRank():number{
@@ -264,7 +267,7 @@ export class AppComponent implements OnInit, OnDestroy {
  setRevealDelay(value:number):void{if(this.revealDelayOptions.includes(value)&&this.revealDelay!==value){this.playSettingsSelection();this.revealDelay=value;this.saveSetting('adivina.revealDelay',String(value));}}
  setBonusScore(value:number):void{if(this.bonusScoreOptions.includes(value)&&this.bonusScore!==value){this.playSettingsSelection();this.bonusScore=value;this.saveSetting('adivina.bonusScore',String(value));}}
  setBonusEnabled(enabled:boolean):void{if(this.bonusEnabled===enabled)return;this.playToggleSound(enabled);this.bonusEnabled=enabled;this.saveSetting('adivina.bonusEnabled',String(enabled));}
- setBonusQuestions(value:number):void{if(this.bonusQuestionOptions.includes(value)&&this.bonusQuestions!==value){this.playSettingsSelection();this.bonusQuestions=value;this.saveSetting('adivina.bonusQuestions',String(value));}}
+ setTimeBonus(value:number):void{if(this.timeBonusOptions.includes(value)&&this.timeBonus!==value){this.playSettingsSelection();this.timeBonus=value;this.saveSetting('adivina.timeBonus',String(value));}}
  setBaseScore(value:number):void{if(this.baseScoreOptions.includes(value)&&this.baseScore!==value){this.playSettingsSelection();this.baseScore=value;this.saveSetting('adivina.baseScore',String(value));}}
  setCluePenalty(value:number):void{if(this.cluePenaltyOptions.includes(value)&&this.cluePenalty!==value){this.playSettingsSelection();this.cluePenalty=value;this.saveSetting('adivina.cluePenalty',String(value));}}
  setCluePenaltyEnabled(enabled:boolean):void{if(this.cluePenaltyEnabled===enabled)return;this.playToggleSound(enabled);this.cluePenaltyEnabled=enabled;this.saveSetting('adivina.cluePenaltyEnabled',String(enabled));}
@@ -294,6 +297,9 @@ export class AppComponent implements OnInit, OnDestroy {
  }
  private playSettingsSelection():void{this.prepareAudio();this.playSound('save');}
  timeLabel(seconds:number):string{return seconds===30?`30 ${tr('seg')}`:seconds===60?'1 min':seconds===90?`1 min 30 ${tr('seg')}`:'2 min';}
+ timeBonusLabel(seconds:number):string{return seconds===0?tr('Mitad del tiempo'):`${seconds} ${tr('seg')}`;}
+ get timeBonusWindow():number{return this.timeBonus===0?this.turnDuration/2:this.timeBonus;}
+ get bonusEligible():boolean{return this.timeLeft>0&&this.timeLeft>=this.turnDuration-this.timeBonusWindow;}
  requestHome():void{
   if(this.view==='characterPreview'){this.previewImageRequest++;this.previewLoading=false;this.previewCharacter=null;this.view='categoryCards';return;}
   if(this.view==='categoryCards'){this.view=this.categoryBrowserReturnView;return;}
@@ -433,10 +439,26 @@ export class AppComponent implements OnInit, OnDestroy {
   }
   this.playSound('timerToggle');
  }
+ requestHint():void{
+  if(!this.canRequestHint||this.hintDialog.nativeElement.open)return;
+  this.hintDialog.nativeElement.showModal();
+ }
+ cancelHint():void{if(this.hintDialog.nativeElement.open)this.hintDialog.nativeElement.close();}
+ confirmHint():void{
+  if(!this.hintDialog.nativeElement.open)return;
+  if(!this.canRequestHint||performance.now()>=this.turnDeadline){this.cancelHint();return;}
+  this.hintUsed=true;
+  this.turnDeadline+=10000;
+  this.timeLeft=Math.ceil((this.turnDeadline-performance.now())/1000);
+  if(this.turnTimer!==null)clearTimeout(this.turnTimer);
+  this.scheduleTurnTick();
+  this.cancelHint();
+ }
  openScoring():void{
   if(this.view!=='game'||!this.current)return;
   if(this.cardFlipped)this.pauseTurnTimer();
   if(this.pausedTurnRemainingMs===0){this.finishTurn(false,true);return;}
+  this.playSettingsSelection();
   this.scoringPlayerIndex=this.playerIndex;
   this.correctingExpiredTurn=false;
   this.view='scoring';
@@ -479,6 +501,7 @@ export class AppComponent implements OnInit, OnDestroy {
   this.view='scoring';
  }
  private finishTurn(isCorrect:boolean,timedOut=false):void{
+  this.cancelHint();
   if(!isCorrect){const player=this.activePlayer;if(player)player.errors++;this.playSound('error');}
   this.expiredPlayerIndex=timedOut?this.playerIndex:null;
   if(timedOut){this.view='timeout';return;}
@@ -510,7 +533,7 @@ export class AppComponent implements OnInit, OnDestroy {
  }
  private prepareTurnTimer():void{
   this.timeLeft=this.turnDuration;this.pausedTurnRemainingMs=this.turnDuration*1000;this.turnDeadline=0;
-  this.hasTurnStarted=false;
+  this.hasTurnStarted=false;this.hintUsed=false;
   this.halfTimeVibrated=false;this.fifteenSecondsVibrated=false;this.lastBeepSecond=null;
  }
  private resumeTurnTimer():void{

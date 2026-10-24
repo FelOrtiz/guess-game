@@ -49,6 +49,7 @@ export class AppComponent implements OnInit, OnDestroy {
  private soundSources=new Map<SoundKind,AudioBufferSourceNode>();
  private soundAudio:Record<SoundKind,HTMLAudioElement>|null=null;
  private soundUrls:Record<SoundKind,string>|null=null;
+ private readonly resumeAudioOnReturn=():void=>{if(document.visibilityState==='visible')this.resumeAudio();};
  private settingsWriteQueue:Promise<void>=Promise.resolve();
  private expiredPlayerIndex:number|null=null;
  private rerollExcludedId:number|null=null;
@@ -93,7 +94,12 @@ export class AppComponent implements OnInit, OnDestroy {
  bonusEnabled=true;cluePenaltyEnabled=true;hintUsed=false;
  soundEnabled=true;vibrationEnabled=true;
  showFinalRanking=false;
- constructor(){addIcons({arrowBack,checkmark,close,refresh,diceOutline,settingsOutline,play,pause,searchOutline,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline,phonePortraitOutline,imageOutline});}
+ constructor(){
+  addIcons({arrowBack,checkmark,close,refresh,diceOutline,settingsOutline,play,pause,searchOutline,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline,phonePortraitOutline,imageOutline});
+  document.addEventListener('visibilitychange',this.resumeAudioOnReturn);
+  window.addEventListener('pageshow',this.resumeAudioOnReturn);
+  window.addEventListener('focus',this.resumeAudioOnReturn);
+ }
  async ngOnInit():Promise<void>{
   await this.restoreSettings();
   this.http.get<Character[]>('assets/character.json').subscribe({next:(people)=>{this.characters=people;this.loading=false;},error:()=>{this.loading=false;this.error=tr('No se pudo cargar el listado de personajes.');}});
@@ -157,6 +163,9 @@ export class AppComponent implements OnInit, OnDestroy {
  }
  ngOnDestroy():void{
   this.clearRevealTimer();this.clearTurnTimer();
+  document.removeEventListener('visibilitychange',this.resumeAudioOnReturn);
+  window.removeEventListener('pageshow',this.resumeAudioOnReturn);
+  window.removeEventListener('focus',this.resumeAudioOnReturn);
   if(this.soundUrls)Object.values(this.soundUrls).forEach(url=>URL.revokeObjectURL(url));
  }
  get categoryCount():number{return this.enabled.length;}
@@ -597,7 +606,7 @@ export class AppComponent implements OnInit, OnDestroy {
        tabChange:this.createSoundBuffer([{frequency:1760,duration:0.025},{frequency:1320,duration:0.035},{frequency:990,duration:0.065}])
      };
     }
-    void this.soundContext.resume().catch(()=>{});
+    void this.resumeAudioContext();
     return;
    }
   }catch{}
@@ -640,6 +649,18 @@ export class AppComponent implements OnInit, OnDestroy {
     for(const audio of Object.values(this.soundAudio)){audio.preload='auto';audio.load();}
    }
   }catch{}
+ }
+ private resumeAudio():void{
+  if(!this.soundEnabled)return;
+  this.prepareAudio();
+  void this.resumeAudioContext();
+ }
+ private async resumeAudioContext():Promise<void>{
+  if(!this.soundContext)return;
+  const state=this.soundContext?.state as string|undefined;
+  if(state==='suspended'||state==='interrupted'){
+   try{await this.soundContext.resume();}catch{}
+  }
  }
  private createSoundBuffer(notes:{frequency:number;duration:number}[],horn=false):AudioBuffer{
   const context=this.soundContext!;
@@ -708,17 +729,7 @@ export class AppComponent implements OnInit, OnDestroy {
   const context=this.soundContext;
   const buffer=this.soundBuffers?.[kind];
   if(context&&buffer){
-   try{
-    if(context.state==='suspended')void context.resume().catch(()=>{});
-    if(exclusive)for(const sourceKind of this.soundSources.keys())this.stopSoundSource(sourceKind);
-    else this.stopSoundSource(kind);
-    const source=context.createBufferSource();
-    source.buffer=buffer;
-    source.connect(context.destination);
-    this.soundSources.set(kind,source);
-    source.onended=()=>{if(this.soundSources.get(kind)===source)this.soundSources.delete(kind);};
-    source.start();
-   }catch{}
+   void this.playAudioContextSound(kind,context,buffer,exclusive);
    return;
   }
   const players=this.soundAudio;
@@ -781,5 +792,19 @@ export class AppComponent implements OnInit, OnDestroy {
   this.cardFlipped=false;
   this.view='between';
   this.countdown=0;
+  }
+ private async playAudioContextSound(kind:SoundKind,context:AudioContext,buffer:AudioBuffer,exclusive:boolean):Promise<void>{
+  try{
+   await this.resumeAudioContext();
+   if(context.state!=='running')return;
+   if(exclusive)for(const sourceKind of this.soundSources.keys())this.stopSoundSource(sourceKind);
+   else this.stopSoundSource(kind);
+   const source=context.createBufferSource();
+   source.buffer=buffer;
+   source.connect(context.destination);
+   this.soundSources.set(kind,source);
+   source.onended=()=>{if(this.soundSources.get(kind)===source)this.soundSources.delete(kind);};
+   source.start();
+  }catch{}
  }
 }

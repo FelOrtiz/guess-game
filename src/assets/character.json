@@ -4474,11 +4474,11 @@
   },
   {
     "id": 394,
-    "name": "Ernesto Belloni",
+    "name": "Francisco Melo",
     "category": "TV chilena",
     "nationality": "Chile",
     "gender": "Masculino",
-    "birthday": null,
+    "birthday": "1966-02-14",
     "isAlive": true,
     "deathDate": null,
     "category_id": 8
@@ -4529,11 +4529,11 @@
   },
   {
     "id": 399,
-    "name": "Fernando Godoy",
+    "name": "Luis Slimming",
     "category": "TV chilena",
     "nationality": "Chile",
     "gender": "Masculino",
-    "birthday": "1983-06-30",
+    "birthday": "1987-07-11",
     "isAlive": true,
     "deathDate": null,
     "category_id": 8

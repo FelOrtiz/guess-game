@@ -3,12 +3,13 @@
   <ng-container *ngIf="loading"><div class="loading"><ion-spinner name="crescent"></ion-spinner><p>{{tr("Cargando personajes...")}}</p></div></ng-container>
   <ng-container *ngIf="!loading">
    <header class="topbar">
-    <button class="icon-button back" *ngIf="view !== 'home' && view !== 'scoring' && view !== 'finished'" (click)="requestHome()" [attr.aria-label]="view==='characterPreview' ? tr('Volver a la lista') : view==='categoryCards' ? tr('Volver a categorías') : tr('Volver al inicio')"><ion-icon *ngIf="view==='characterPreview'||view==='categoryCards'||view==='settings'||view==='setup';else homeExitIcon" name="arrow-back" aria-hidden="true"></ion-icon><ng-template #homeExitIcon><img class="home-exit-icon" src="assets/exit-door.svg" alt="" aria-hidden="true" /></ng-template></button>
+    <button class="icon-button back" *ngIf="view !== 'home' && view !== 'scoring' && view !== 'finished'" (click)="requestHome()" [attr.aria-label]="view==='characterPreview' ? tr('Volver a la lista') : view==='categoryCards' ? tr('Volver a categorías') : tr('Volver al inicio')"><ion-icon *ngIf="view==='characterPreview'||view==='categoryCards'||view==='settings'||view==='setup'||view==='howToPlay';else homeExitIcon" name="arrow-back" aria-hidden="true"></ion-icon><ng-template #homeExitIcon><img class="home-exit-icon" src="assets/exit-door.svg" alt="" aria-hidden="true" /></ng-template></button>
     <button class="icon-button back" *ngIf="view === 'scoring'" (click)="closeScoring()" [attr.aria-label]="tr('Cerrar sin guardar')"><ion-icon name="arrow-back" aria-hidden="true"></ion-icon></button>
     <div class="top-placeholder" *ngIf="view === 'home' || view === 'finished'"></div>
     <div class="brand"><span class="brand-icon">✦</span> {{tr("ADIVINA")}}<span class="brand-light">{{tr("QUIÉN")}}</span></div>
     <button class="icon-button" *ngIf="view === 'game'" (click)="reroll()" [attr.aria-label]="tr('Cambiar personaje y reiniciar turno')"><ion-icon name="dice-outline"></ion-icon></button>
-    <div class="top-placeholder" *ngIf="view !== 'game'"></div>
+    <button type="button" class="icon-button home-help-button" *ngIf="view === 'home'" (click)="openHowToPlay()" [attr.aria-label]="tr('Cómo jugar')"><ion-icon name="help-circle-outline" aria-hidden="true"></ion-icon></button>
+    <div class="top-placeholder" *ngIf="view !== 'game' && view !== 'home'"></div>
    </header>
    <ng-template #cardFront let-person let-age="age" let-timer="timer" let-preview="preview">
     <img *ngIf="!photoMissing(person)" class="character-photo" [class.photo-loaded]="hasCharacterPhoto(person)" [src]="photoPath(person)" [alt]="tr('Retrato de')+' '+person.name" decoding="async" draggable="false" (load)="markPhotoAvailable(person.id)" (error)="markPhotoMissing(person.id)" />
@@ -31,7 +32,19 @@
      <button class="secondary-button" (click)="openSettings()"><ion-icon name="settings-outline"></ion-icon> {{tr("CONFIGURAR")}}</button>
     </div>
     <div class="home-stats"><div><strong>{{availableCount}}</strong><small>{{tr("PERSONAJES DISPONIBLES")}}</small></div><div class="stat-line"></div><div><strong>{{categoryCount}}</strong><small>{{tr("CATEGORÍAS ACTIVAS")}}</small></div></div>
-    <p class="hint" *ngIf="error">{{error}}</p>
+   <p class="hint" *ngIf="error">{{error}}</p>
+  </main>
+   <main *ngIf="view==='howToPlay'" class="how-to-play fade">
+    <div class="section-kicker">{{tr('GUÍA RÁPIDA')}}</div>
+    <h1>{{tr('Cómo jugar')}}</h1>
+    <p class="how-to-play-intro">{{tr('Adivina tu personaje antes de que termine el tiempo.')}}</p>
+    <ol class="how-to-play-steps">
+     <li><span class="how-to-play-number" aria-hidden="true">1</span><div><h2>{{tr('Prepara la partida')}}</h2><p>{{tr('Agrega al menos dos jugadores, elige las categorías y ajusta las rondas y el tiempo en Configurar.')}}</p></div></li>
+     <li><span class="how-to-play-number" aria-hidden="true">2</span><div><h2>{{tr('Pasa el teléfono')}}</h2><p>{{tr('Cuando sea tu turno, gira el teléfono hacia los demás para que vean el personaje sin que tú lo mires.')}}</p></div></li>
+     <li><span class="how-to-play-number" aria-hidden="true">3</span><div><h2>{{tr('Haz preguntas')}}</h2><p>{{tr('Toca la carta para ocultarla e iniciar el reloj. Haz preguntas que se respondan con sí o no hasta adivinar.')}}</p></div></li>
+     <li><span class="how-to-play-number" aria-hidden="true">4</span><div><h2>{{tr('Anota el resultado')}}</h2><p>{{tr('Pulsa Puntuar y elige los puntos del acierto o marca el turno como incorrecto. Al acabarse el tiempo, se revela el personaje.')}}</p></div></li>
+    </ol>
+    <section class="how-to-play-score"><h2>{{tr('Puntos y pistas')}}</h2><p>{{tr('Un acierto suma puntos. Puedes ganar una bonificación por rapidez o pedir 10 segundos extra en la segunda mitad del turno. Pedir pista cambia el puntaje.')}}</p><p>{{tr('Gana quien tenga más puntos al terminar las rondas.')}}</p></section>
    </main>
    <main *ngIf="view==='setup'" class="settings game-setup fade">
     <div class="section-kicker">{{tr('PREPARA TU PARTIDA')}}</div>

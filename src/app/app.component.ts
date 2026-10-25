@@ -8,9 +8,9 @@ import { Preferences } from '@capacitor/preferences';
 import { IonApp, IonContent, IonIcon, IonToggle, IonSpinner } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { tr } from './i18n';
-import { arrowBack, checkmark, close, refresh, diceOutline, settingsOutline, play, pause, searchOutline, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline, phonePortraitOutline, imageOutline } from 'ionicons/icons';
+import { arrowBack, checkmark, close, refresh, diceOutline, settingsOutline, helpCircleOutline, play, pause, searchOutline, trophyOutline, sparklesOutline, checkmarkCircle, closeCircle, layersOutline, phonePortraitOutline, imageOutline } from 'ionicons/icons';
 
-type View = 'home' | 'setup' | 'game' | 'scoring' | 'between' | 'timeout' | 'roundResult' | 'settings' | 'categoryCards' | 'characterPreview' | 'finished';
+type View = 'home' | 'howToPlay' | 'setup' | 'game' | 'scoring' | 'between' | 'timeout' | 'roundResult' | 'settings' | 'categoryCards' | 'characterPreview' | 'finished';
 type SetupStep = 'players' | 'categories';
 type SettingsTab = 'general' | 'others' | 'players' | 'categories';
 type AccentId = 'green' | 'blue' | 'red' | 'yellow' | 'orange';
@@ -95,7 +95,7 @@ export class AppComponent implements OnInit, OnDestroy {
  soundEnabled=true;vibrationEnabled=true;
  showFinalRanking=false;
  constructor(){
-  addIcons({arrowBack,checkmark,close,refresh,diceOutline,settingsOutline,play,pause,searchOutline,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline,phonePortraitOutline,imageOutline});
+  addIcons({arrowBack,checkmark,close,refresh,diceOutline,settingsOutline,helpCircleOutline,play,pause,searchOutline,trophyOutline,sparklesOutline,checkmarkCircle,closeCircle,layersOutline,phonePortraitOutline,imageOutline});
   document.addEventListener('visibilitychange',this.resumeAudioOnReturn);
   window.addEventListener('pageshow',this.resumeAudioOnReturn);
   window.addEventListener('focus',this.resumeAudioOnReturn);
@@ -313,7 +313,7 @@ export class AppComponent implements OnInit, OnDestroy {
   if(this.view==='characterPreview'){this.previewImageRequest++;this.previewLoading=false;this.previewCharacter=null;this.view='categoryCards';return;}
   if(this.view==='categoryCards'){this.view=this.categoryBrowserReturnView;return;}
   if(this.homeDialog.nativeElement.open)return;
-  if(this.view==='settings'||this.view==='setup'){this.goHome();return;}
+  if(this.view==='settings'||this.view==='setup'||this.view==='howToPlay'){this.goHome();return;}
   if(this.view==='game'&&this.cardFlipped){
    this.pauseTurnTimer();
    if(this.pausedTurnRemainingMs===0){this.finishTurn(false,true);return;}
@@ -331,6 +331,7 @@ export class AppComponent implements OnInit, OnDestroy {
   this.goHome();
  }
  goHome():void{this.clearRevealTimer();this.clearTurnTimer();this.view='home';}
+ openHowToPlay():void{this.view='howToPlay';}
  openSettings():void{this.settingsTab='general';this.view='settings';this.prepareAudio();this.playSound('gear');}
  openCategoryCards(name:string):void{
   if(this.view==='settings')this.playSettingsSelection();

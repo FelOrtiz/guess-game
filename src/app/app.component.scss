@@ -295,3 +295,19 @@
 .icon-button .home-exit-icon{width:25px;height:25px;display:block}
 .home-actions .primary-button ion-icon:first-child{margin-left:0}
 .reroll-dialog-icon img{width:32px;height:32px;display:block}
+.home-help-button{color:var(--ui-accent)}
+.home-help-button:focus-visible{outline:2px solid var(--ui-accent);outline-offset:3px}
+.how-to-play{flex:1;min-width:0;padding:32px 0 12px}
+.how-to-play h1{margin:12px 0;font-size:clamp(40px,11vw,58px);line-height:1.05;letter-spacing:-2px}
+.how-to-play-intro{margin:0 0 24px;color:#b0b8d2;font-size:15px;line-height:1.6}
+.how-to-play-steps{display:grid;gap:12px;margin:0;padding:0;list-style:none}
+.how-to-play-steps li{display:flex;gap:15px;padding:17px;border:1px solid #344062;border-radius:18px;background:#202945}
+.how-to-play-number{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border-radius:11px;background:color-mix(in srgb,var(--ui-accent) 18%,#202945);color:var(--ui-accent);font-size:16px;font-weight:900}
+.how-to-play h2{margin:0 0 6px;font-size:16px;line-height:1.25}
+.how-to-play p{color:#b0b8d2;line-height:1.5}
+.how-to-play-steps p{margin:0;font-size:13px}
+.how-to-play-score{margin-top:18px;padding:20px;border:1px solid color-mix(in srgb,var(--ui-accent) 45%,#344062);border-radius:18px;background:color-mix(in srgb,var(--ui-accent) 8%,#202945)}
+.how-to-play-score h2{color:var(--ui-accent)}
+.how-to-play-score p{margin:0 0 10px;font-size:13px}
+.how-to-play-score p:last-child{margin-bottom:0}
+@media(max-height:720px){.how-to-play{padding-top:16px}}

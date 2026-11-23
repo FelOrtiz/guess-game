@@ -572,7 +572,7 @@ export class AppComponent implements OnInit, OnDestroy {
    if(!previous||performance.now()<this.motionArmedAt)return;
    const now=performance.now();
    const delta=Math.hypot(vector.x-previous.x,vector.y-previous.y,vector.z-previous.z);
-   const isMoving=delta>=1.2;
+   const isMoving=delta>=2.8;
    if(!isMoving||now-this.lastMotionAt>150){this.motionActiveSince=0;}
    if(isMoving){
     if(this.motionActiveSince===0)this.motionActiveSince=now;

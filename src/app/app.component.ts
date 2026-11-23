@@ -459,7 +459,14 @@ export class AppComponent implements OnInit, OnDestroy {
   if(!this.canRequestHint||this.hintDialog.nativeElement.open)return;
   this.hintDialog.nativeElement.showModal();this.hintDialogOpen=true;
  }
- cancelHint():void{if(this.hintDialog.nativeElement.open)this.hintDialog.nativeElement.close();this.hintDialogOpen=false;}
+ cancelHint():void{
+  if(this.hintDialog.nativeElement.open)this.hintDialog.nativeElement.close();
+  this.hintDialogOpen=false;
+  window.setTimeout(()=>{
+   const active=document.activeElement;
+   if(active instanceof HTMLElement&&(active.classList.contains('hint-button')||active.classList.contains('character-card')))active.blur();
+  });
+ }
  confirmHint():void{
   if(!this.hintDialog.nativeElement.open)return;
   if(!this.canRequestHint||performance.now()>=this.turnDeadline){this.cancelHint();return;}
@@ -551,6 +558,7 @@ export class AppComponent implements OnInit, OnDestroy {
  }
 
  private async requestDeviceMotionPermission():Promise<void>{
+  if(typeof window.DeviceMotionEvent==='undefined')return;
   const motionEvent=window.DeviceMotionEvent as typeof DeviceMotionEvent & {requestPermission?:()=>Promise<'granted'|'denied'>};
   if(typeof motionEvent.requestPermission!=='function')return;
   try{await motionEvent.requestPermission();}catch{}

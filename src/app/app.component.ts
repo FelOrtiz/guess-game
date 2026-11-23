@@ -60,6 +60,8 @@ export class AppComponent implements OnInit, OnDestroy {
  private deviceMotionListener:((event:DeviceMotionEvent)=>void)|null=null;
  private lastMotionVector:{x:number;y:number;z:number}|null=null;
  private motionArmedAt=0;
+ private motionActiveSince=0;
+ private lastMotionAt=0;
  correctingExpiredTurn=false;
  private scoreReturnView:View='between';
  readonly categories=CATEGORY_DATA;
@@ -543,7 +545,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const excludedId=this.rerollExcludedId??undefined;
     this.rerollExcludedId=null;
     if(!this.pickNext(excludedId)){this.error=tr('No hay otro personaje disponible.');this.goHome();return;}
-    this.view='game';this.prepareTurnTimer();this.attachDeviceMotionListener();
+    this.view='game';this.prepareTurnTimer();this.attachDeviceMotionListener();this.vibrateCharacterReveal();
    }
   },1000);
  }
@@ -558,6 +560,7 @@ export class AppComponent implements OnInit, OnDestroy {
   this.removeDeviceMotionListener();
   if(typeof window.DeviceMotionEvent==='undefined')return;
   this.lastMotionVector=null;
+  this.motionActiveSince=0;this.lastMotionAt=0;
   this.motionArmedAt=performance.now()+500;
   this.deviceMotionListener=(event:DeviceMotionEvent)=>{
    if(this.view!=='game'||this.cardFlipped||this.hasTurnStarted||!this.current)return;
@@ -567,15 +570,25 @@ export class AppComponent implements OnInit, OnDestroy {
    const previous=this.lastMotionVector;
    this.lastMotionVector=vector;
    if(!previous||performance.now()<this.motionArmedAt)return;
+   const now=performance.now();
    const delta=Math.hypot(vector.x-previous.x,vector.y-previous.y,vector.z-previous.z);
-   if(delta>=2.2)this.flipCard();
+   const isMoving=delta>=1.2;
+   if(!isMoving||now-this.lastMotionAt>150){this.motionActiveSince=0;}
+   if(isMoving){
+    if(this.motionActiveSince===0)this.motionActiveSince=now;
+    this.lastMotionAt=now;
+    if(now-this.motionActiveSince>=1000)this.flipCard();
+   }
   };
   window.addEventListener('devicemotion',this.deviceMotionListener);
  }
 
  private removeDeviceMotionListener():void{
   if(this.deviceMotionListener)window.removeEventListener('devicemotion',this.deviceMotionListener);
-  this.deviceMotionListener=null;this.lastMotionVector=null;
+  this.deviceMotionListener=null;this.lastMotionVector=null;this.motionActiveSince=0;this.lastMotionAt=0;
+ }
+ private vibrateCharacterReveal():void{
+  if(this.vibrationEnabled&&!this.vibrationUnavailable)void Haptics.vibrate({duration:180}).catch(()=>{});
  }
  private prepareTurnTimer():void{
   this.timeLeft=this.turnDuration;this.pausedTurnRemainingMs=this.turnDuration*1000;this.turnDeadline=0;

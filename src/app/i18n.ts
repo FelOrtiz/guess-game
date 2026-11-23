@@ -284,13 +284,13 @@ const messages: Record<string,string> = {
  "Pasa el teléfono": $localize`:@@s281:Pasa el teléfono`,
  "Cuando sea tu turno, gira el teléfono hacia los demás para que vean el personaje sin que tú lo mires.": $localize`:@@s282:Cuando sea tu turno, gira el teléfono hacia los demás para que vean el personaje sin que tú lo mires.`,
  "Haz preguntas": $localize`:@@s283:Haz preguntas`,
- "Mueve el teléfono para ocultar la carta e iniciar el reloj. También puedes tocarla. Haz preguntas que se respondan con sí o no hasta adivinar.": $localize`:@@s284:Mueve el teléfono para ocultar la carta e iniciar el reloj. También puedes tocarla. Haz preguntas que se respondan con sí o no hasta adivinar.`,
+ "Mueve el teléfono durante 1 segundo para ocultar la carta e iniciar el reloj. También puedes tocarla. Haz preguntas que se respondan con sí o no hasta adivinar.": $localize`:@@s284:Mueve el teléfono durante 1 segundo para ocultar la carta e iniciar el reloj. También puedes tocarla. Haz preguntas que se respondan con sí o no hasta adivinar.`,
  "Anota el resultado": $localize`:@@s285:Anota el resultado`,
  "Pulsa Puntuar y elige los puntos del acierto o marca el turno como incorrecto. Al acabarse el tiempo, se revela el personaje.": $localize`:@@s286:Pulsa Puntuar y elige los puntos del acierto o marca el turno como incorrecto. Al acabarse el tiempo, se revela el personaje.`,
  "Puntos y pistas": $localize`:@@s287:Puntos y pistas`,
  "Un acierto suma puntos. Puedes ganar una bonificación por rapidez o pedir 10 segundos extra en la segunda mitad del turno. Pedir pista cambia el puntaje.": $localize`:@@s288:Un acierto suma puntos. Puedes ganar una bonificación por rapidez o pedir 10 segundos extra en la segunda mitad del turno. Pedir pista cambia el puntaje.`,
  "Gana quien tenga más puntos al terminar las rondas.": $localize`:@@s289:Gana quien tenga más puntos al terminar las rondas.`,
- "Mueve el teléfono para ocultar la tarjeta e iniciar el tiempo.": $localize`:@@s290:Mueve el teléfono para ocultar la tarjeta e iniciar el tiempo.`,
+ "Mueve el teléfono durante 1 segundo para ocultar la tarjeta e iniciar el tiempo.": $localize`:@@s290:Mueve el teléfono durante 1 segundo para ocultar la tarjeta e iniciar el tiempo.`,
  "También puedes tocar la tarjeta.": $localize`:@@s291:También puedes tocar la tarjeta.`,
 };
 export function tr(source: string): string { return messages[source] ?? source; }

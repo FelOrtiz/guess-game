@@ -283,10 +283,12 @@
   "s281": "Pass the phone",
   "s282": "On your turn, face the phone toward the other players so they can see the character without you looking.",
   "s283": "Ask questions",
-  "s284": "Tap the card to hide it and start the timer. Ask yes or no questions until you guess the character.",
+  "s284": "Move the phone to hide the card and start the timer. You can also tap it. Ask yes or no questions until you guess the character.",
   "s285": "Record the result",
   "s286": "Tap Score and choose points for a correct guess or mark the turn incorrect. When time runs out, the character is revealed.",
   "s287": "Points and hints",
   "s288": "A correct guess earns points. You can get a speed bonus or ask for 10 extra seconds in the second half of the turn. Asking for a hint changes the score.",
-  "s289": "The player with the most points after all rounds wins."
+  "s289": "The player with the most points after all rounds wins.",
+  "s290": "Move the phone to hide the card and start the timer.",
+  "s291": "You can also tap the card."
 }

@@ -41,7 +41,7 @@
     <ol class="how-to-play-steps">
      <li><span class="how-to-play-number" aria-hidden="true">1</span><div><h2>{{tr('Prepara la partida')}}</h2><p>{{tr('Agrega al menos dos jugadores, elige las categorías y ajusta las rondas y el tiempo en Configurar.')}}</p></div></li>
      <li><span class="how-to-play-number" aria-hidden="true">2</span><div><h2>{{tr('Pasa el teléfono')}}</h2><p>{{tr('Cuando sea tu turno, gira el teléfono hacia los demás para que vean el personaje sin que tú lo mires.')}}</p></div></li>
-     <li><span class="how-to-play-number" aria-hidden="true">3</span><div><h2>{{tr('Haz preguntas')}}</h2><p>{{tr('Toca la carta para ocultarla e iniciar el reloj. Haz preguntas que se respondan con sí o no hasta adivinar.')}}</p></div></li>
+     <li><span class="how-to-play-number" aria-hidden="true">3</span><div><h2>{{tr('Haz preguntas')}}</h2><p>{{tr('Mueve el teléfono para ocultar la carta e iniciar el reloj. También puedes tocarla. Haz preguntas que se respondan con sí o no hasta adivinar.')}}</p></div></li>
      <li><span class="how-to-play-number" aria-hidden="true">4</span><div><h2>{{tr('Anota el resultado')}}</h2><p>{{tr('Pulsa Puntuar y elige los puntos del acierto o marca el turno como incorrecto. Al acabarse el tiempo, se revela el personaje.')}}</p></div></li>
     </ol>
     <section class="how-to-play-score"><h2>{{tr('Puntos y pistas')}}</h2><p>{{tr('Un acierto suma puntos. Puedes ganar una bonificación por rapidez o pedir 10 segundos extra en la segunda mitad del turno. Pedir pista cambia el puntaje.')}}</p><p>{{tr('Gana quien tenga más puntos al terminar las rondas.')}}</p></section>
@@ -107,6 +107,7 @@
       </div>
      </div>
     </section>
+    <p *ngIf="!cardFlipped" class="game-hint motion-flip-hint">{{tr('Mueve el teléfono para ocultar la tarjeta e iniciar el tiempo.')}} <span>{{tr('También puedes tocar la tarjeta.')}}</span></p>
    </main>
    <main *ngIf="view==='timeout' && current" class="timeout-screen fade">
     <div class="section-kicker">{{tr("TIEMPO AGOTADO")}}</div>

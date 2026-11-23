@@ -57,6 +57,9 @@ export class AppComponent implements OnInit, OnDestroy {
  private previewTouchStart:{x:number;y:number}|null=null;
  private previewImageRequest=0;
  private photoStatuses=new Map<number,boolean>();
+ private deviceMotionListener:((event:DeviceMotionEvent)=>void)|null=null;
+ private lastMotionVector:{x:number;y:number;z:number}|null=null;
+ private motionArmedAt=0;
  correctingExpiredTurn=false;
  private scoreReturnView:View='between';
  readonly categories=CATEGORY_DATA;
@@ -162,7 +165,7 @@ export class AppComponent implements OnInit, OnDestroy {
   });
  }
  ngOnDestroy():void{
-  this.clearRevealTimer();this.clearTurnTimer();
+  this.clearRevealTimer();this.clearTurnTimer();this.removeDeviceMotionListener();
   document.removeEventListener('visibilitychange',this.resumeAudioOnReturn);
   window.removeEventListener('pageshow',this.resumeAudioOnReturn);
   window.removeEventListener('focus',this.resumeAudioOnReturn);
@@ -330,7 +333,7 @@ export class AppComponent implements OnInit, OnDestroy {
   this.homeDialog.nativeElement.close();
   this.goHome();
  }
- goHome():void{this.clearRevealTimer();this.clearTurnTimer();this.view='home';}
+ goHome():void{this.clearRevealTimer();this.clearTurnTimer();this.removeDeviceMotionListener();this.view='home';}
  openHowToPlay():void{this.view='howToPlay';}
  openSettings():void{this.settingsTab='general';this.view='settings';this.prepareAudio();this.playSound('gear');}
  openCategoryCards(name:string):void{
@@ -435,6 +438,7 @@ export class AppComponent implements OnInit, OnDestroy {
    if(this.pausedTurnRemainingMs===0){this.finishTurn(false,true);return;}
    this.cardFlipped=false;
   }else{
+   this.removeDeviceMotionListener();
    this.cardFlipped=true;
    this.resumeTurnTimer();
   }
@@ -511,6 +515,7 @@ export class AppComponent implements OnInit, OnDestroy {
   this.view='scoring';
  }
  private finishTurn(isCorrect:boolean,timedOut=false):void{
+  this.removeDeviceMotionListener();
   this.cancelHint();
   if(!isCorrect){const player=this.activePlayer;if(player)player.errors++;this.playSound('error');}
   this.expiredPlayerIndex=timedOut?this.playerIndex:null;
@@ -525,9 +530,10 @@ export class AppComponent implements OnInit, OnDestroy {
   if(this.playerIndex===this.players.length-1){this.view='roundResult';}
   else{this.playerIndex++;this.view='between';}
  }
- beginReveal():void{
+ async beginReveal():Promise<void>{
   if(this.view!=='between'||this.revealTimer!==null)return;
   this.prepareAudio();
+  await this.requestDeviceMotionPermission();
   this.playBeep();
   this.countdown=this.revealDelay;
   this.revealTimer=setInterval(()=>{
@@ -537,9 +543,39 @@ export class AppComponent implements OnInit, OnDestroy {
     const excludedId=this.rerollExcludedId??undefined;
     this.rerollExcludedId=null;
     if(!this.pickNext(excludedId)){this.error=tr('No hay otro personaje disponible.');this.goHome();return;}
-    this.view='game';this.prepareTurnTimer();
+    this.view='game';this.prepareTurnTimer();this.attachDeviceMotionListener();
    }
   },1000);
+ }
+
+ private async requestDeviceMotionPermission():Promise<void>{
+  const motionEvent=window.DeviceMotionEvent as typeof DeviceMotionEvent & {requestPermission?:()=>Promise<'granted'|'denied'>};
+  if(typeof motionEvent.requestPermission!=='function')return;
+  try{await motionEvent.requestPermission();}catch{}
+ }
+
+ private attachDeviceMotionListener():void{
+  this.removeDeviceMotionListener();
+  if(typeof window.DeviceMotionEvent==='undefined')return;
+  this.lastMotionVector=null;
+  this.motionArmedAt=performance.now()+500;
+  this.deviceMotionListener=(event:DeviceMotionEvent)=>{
+   if(this.view!=='game'||this.cardFlipped||this.hasTurnStarted||!this.current)return;
+   const acceleration=event.accelerationIncludingGravity;
+   if(!acceleration||acceleration.x===null||acceleration.y===null||acceleration.z===null)return;
+   const vector={x:acceleration.x,y:acceleration.y,z:acceleration.z};
+   const previous=this.lastMotionVector;
+   this.lastMotionVector=vector;
+   if(!previous||performance.now()<this.motionArmedAt)return;
+   const delta=Math.hypot(vector.x-previous.x,vector.y-previous.y,vector.z-previous.z);
+   if(delta>=2.2)this.flipCard();
+  };
+  window.addEventListener('devicemotion',this.deviceMotionListener);
+ }
+
+ private removeDeviceMotionListener():void{
+  if(this.deviceMotionListener)window.removeEventListener('devicemotion',this.deviceMotionListener);
+  this.deviceMotionListener=null;this.lastMotionVector=null;
  }
  private prepareTurnTimer():void{
   this.timeLeft=this.turnDuration;this.pausedTurnRemainingMs=this.turnDuration*1000;this.turnDeadline=0;

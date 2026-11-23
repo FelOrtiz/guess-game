@@ -62,7 +62,7 @@ export class AppComponent implements OnInit, OnDestroy {
  private motionArmedAt=0;
  private motionActiveSince=0;
  private lastMotionAt=0;
- correctingExpiredTurn=false;
+ correctingExpiredTurn=false;hintDialogOpen=false;
  private scoreReturnView:View='between';
  readonly categories=CATEGORY_DATA;
  readonly allCategoryNames=CATEGORY_DATA.map(c=>c.name);
@@ -457,9 +457,9 @@ export class AppComponent implements OnInit, OnDestroy {
  }
  requestHint():void{
   if(!this.canRequestHint||this.hintDialog.nativeElement.open)return;
-  this.hintDialog.nativeElement.showModal();
+  this.hintDialog.nativeElement.showModal();this.hintDialogOpen=true;
  }
- cancelHint():void{if(this.hintDialog.nativeElement.open)this.hintDialog.nativeElement.close();}
+ cancelHint():void{if(this.hintDialog.nativeElement.open)this.hintDialog.nativeElement.close();this.hintDialogOpen=false;}
  confirmHint():void{
   if(!this.hintDialog.nativeElement.open)return;
   if(!this.canRequestHint||performance.now()>=this.turnDeadline){this.cancelHint();return;}
